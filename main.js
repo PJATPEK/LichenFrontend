@@ -66,7 +66,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
         submitButton.textContent = originalButtonText;
         submitButton.disabled = false;
     }
-    }); 
+    ); 
 
     // Close any open info panel before processing new image
     closeDetectionPanel();
@@ -662,6 +662,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
