@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
+    <meta charset="UTF-8">
     <title>Lichen Detection</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
     <h1>Lichen Detection</h1>
+    
+    <!-- API Configuration Panel -->
+    <div class="api-config">
+        <label for="api-url">Backend API URL:</label>
+        <input type="text" id="api-url" value="" placeholder="https://your-username-lichen-api.hf.space">
+        <button id="test-connection">Test Connection</button>
+        <span id="connection-status"></span>
+    </div>
+
     <form id="upload-form" enctype="multipart/form-data">
         <input type="file" id="image-input" accept="image/*" required>
         <button type="submit">Predict</button>
@@ -27,6 +37,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script src="main.js"></script>
 </body>
 </html>
