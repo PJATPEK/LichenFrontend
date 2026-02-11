@@ -1,20 +1,94 @@
-// Dark mode toggle functionality - using in-memory storage instead of localStorage
+// ============================================
+// CONFIGURATION
+// ============================================
+
+// Get API URL from input field or use default
+function getApiUrl() {
+    const apiUrlInput = document.getElementById('api-url');
+    let url = apiUrlInput ? apiUrlInput.value.trim() : '';
+    
+    // Remove trailing slash if present
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+    
+    return url || 'http://localhost:7860';
+}
+
+// ============================================
+// CONNECTION TESTING
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const testConnectionBtn = document.getElementById('test-connection');
+    if (testConnectionBtn) {
+        testConnectionBtn.addEventListener('click', testBackendConnection);
+    }
+    
+    // Auto-test connection on page load
+    setTimeout(testBackendConnection, 500);
+});
+
+async function testBackendConnection() {
+    const statusElement = document.getElementById('connection-status');
+    const apiUrl = getApiUrl();
+    
+    if (!apiUrl || apiUrl === 'http://localhost:7860') {
+        statusElement.textContent = '⚠️ Please enter your Hugging Face Space URL';
+        statusElement.className = 'error';
+        return;
+    }
+    
+    statusElement.textContent = 'Testing...';
+    statusElement.className = '';
+    
+    try {
+        const response = await fetch(`${apiUrl}/health`, {
+            method: 'GET',
+            mode: 'cors'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            statusElement.textContent = '✓ Connected';
+            statusElement.className = 'success';
+            console.log('Backend health check:', data);
+        } else {
+            throw new Error(`Backend responded with status ${response.status}`);
+        }
+    } catch (error) {
+        statusElement.textContent = '✗ Connection Failed';
+        statusElement.className = 'error';
+        console.error('Connection test failed:', error);
+    }
+}
+
+// ============================================
+// DARK MODE
+// ============================================
+
 let darkModeEnabled = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     
-    darkModeToggle.addEventListener('click', function() {
-        darkModeEnabled = !darkModeEnabled;
-        document.body.classList.toggle('dark-mode');
-        
-        if (darkModeEnabled) {
-            this.textContent = '☀️';
-        } else {
-            this.textContent = '🌙';
-        }
-    });
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', function() {
+            darkModeEnabled = !darkModeEnabled;
+            document.body.classList.toggle('dark-mode');
+            
+            if (darkModeEnabled) {
+                this.textContent = '☀️';
+            } else {
+                this.textContent = '🌙';
+            }
+        });
+    }
 });
+
+// ============================================
+// MAIN APPLICATION STATE
+// ============================================
 
 let currentDetections = [];
 let originalImageSrc = null;
@@ -28,59 +102,97 @@ let isDragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
-document.getElementById('upload-form').addEventListener('submit', function (e) {
+// ============================================
+// IMAGE UPLOAD AND PREDICTION
+// ============================================
+
+document.getElementById('upload-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-
+    
     const fileInput = document.getElementById('image-input');
-
     if (!fileInput.files || !fileInput.files[0]) {
         alert('Please select an image file');
         return;
     }
+
+    const apiUrl = getApiUrl();
+    if (!apiUrl || apiUrl === 'http://localhost:7860') {
+        alert('Please enter your Hugging Face Space URL in the Backend API URL field');
+        return;
+    }
+
+    // Close any open info panel before processing new image
+    closeDetectionPanel();
 
     const submitButton = this.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.textContent;
     submitButton.textContent = 'Processing...';
     submitButton.disabled = true;
 
-    const file = fileInput.files[0];
-    const reader = new FileReader();
+    let formData = new FormData();
+    formData.append('image', fileInput.files[0]);
 
-    reader.onload = async function () {
-        try {
-            const response = await fetch(
-                'https://pjetpaaaaak-lichen-detection-api.hf.space/api/predict',
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        data: [reader.result]
-                    })
-                }
-            );
+    try {
+        console.log('Sending request to:', `${apiUrl}/predict`);
+        
+        let response = await fetch(`${apiUrl}/predict`, {
+            method: 'POST',
+            body: formData,
+            mode: 'cors'
+        });
 
-            if (!response.ok) throw new Error("Network error");
+        console.log('Response status:', response.status);
 
-            const result = await response.json();
-
-            const resultImage = result.data[0];
-            const detectionText = result.data[1];
-
-            document.getElementById('result-image').src = resultImage;
-            document.getElementById('detections-text').textContent = detectionText;
-            document.getElementById('result-container').style.display = 'block';
-
-        } catch (error) {
-            console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง');
-        } finally {
-            submitButton.textContent = originalButtonText;
-            submitButton.disabled = false;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
         }
-    };
 
-    reader.readAsDataURL(file);
+        let data = await response.json();
+        console.log('Response data:', data);
+
+        if (data.result_image_base64) {
+            const imgElement = document.getElementById('result-image');
+            originalImageSrc = 'data:image/jpeg;base64,' + data.result_image_base64;
+            imgElement.src = originalImageSrc;
+            
+            currentDetections = data.detections || [];
+            
+            // Also store the uploaded image as the original without bbox
+            const uploadedFile = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImageWithoutBboxSrc = e.target.result;
+            };
+            reader.readAsDataURL(uploadedFile);
+            
+            imgElement.onload = function() {
+                setupImageClickHandlers(imgElement, data.detections || []);
+            };
+        }
+
+        document.getElementById('result-container').style.display = 'block';
+        
+        document.getElementById('result-container').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // Clear the file input so the filename disappears
+        fileInput.value = '';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message + '\n\nกรุณาตรวจสอบว่า Backend API URL ถูกต้องและ API กำลังทำงานอยู่');
+    } finally {
+        submitButton.textContent = originalButtonText;
+        submitButton.disabled = false;
+    }
 });
+
+// ============================================
+// IMAGE INTERACTION SETUP
+// ============================================
 
 function setupImageClickHandlers(imgElement, detections) {
     const imageContainer = document.getElementById('image-container');
@@ -93,10 +205,13 @@ function setupImageClickHandlers(imgElement, detections) {
         existingCanvas.remove();
     }
     
+    if (!detections || detections.length === 0) {
+        console.log('No detections to display');
+        return;
+    }
+    
     // Wait for image to fully render
     setTimeout(() => {
-        const imgRect = imgElement.getBoundingClientRect();
-        const containerRect = imageContainer.getBoundingClientRect();
         const imgNaturalWidth = imgElement.naturalWidth;
         const imgNaturalHeight = imgElement.naturalHeight;
         
@@ -150,6 +265,10 @@ function setupImageClickHandlers(imgElement, detections) {
         });
     }, 100);
 }
+
+// ============================================
+// BLUR EFFECT
+// ============================================
 
 function applySelectiveBlur(imgElement, bbox) {
     const imageContainer = document.getElementById('image-container');
@@ -225,6 +344,10 @@ function applySelectiveBlur(imgElement, bbox) {
     }
 }
 
+// ============================================
+// DETECTION PANEL
+// ============================================
+
 function showDetectionPanel(detection, imgElement) {
     activeDetectionId = detection.id;
     activeBbox = detection.bbox;
@@ -232,13 +355,9 @@ function showDetectionPanel(detection, imgElement) {
     // Check if mobile FIRST
     const isMobile = window.innerWidth <= 768;
     
-    console.log('Window width:', window.innerWidth); // Debug log
-    console.log('Mobile detected:', isMobile); // Debug log
-    
     // Remove existing panel if any
     const existingPanel = document.querySelector('.info-panel');
     if (existingPanel) {
-        console.log('Removing existing panel'); // Debug log
         existingPanel.remove();
     }
     
@@ -319,43 +438,23 @@ function showDetectionPanel(detection, imgElement) {
     
     // Append panel to correct location
     if (isMobile) {
-        // On mobile: append to main-container (below image)
         const mainContainer = document.getElementById('main-container');
         if (mainContainer) {
-            console.log('Appending to main-container'); // Debug log
             mainContainer.appendChild(panel);
-            
-            // Force panel visibility
             panel.style.display = 'block';
             panel.style.visibility = 'visible';
-            
-            console.log('Panel styles:', {
-                position: panel.style.position,
-                right: panel.style.right,
-                left: panel.style.left,
-                width: panel.style.width
-            }); // Debug log
-            
-            // Scroll to panel after a short delay
             setTimeout(() => {
-                console.log('Scrolling to panel'); // Debug log
                 panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 200);
-        } else {
-            console.error('Main container not found!'); // Debug log
         }
     } else {
-        // On desktop: append to body (slides from right)
-        console.log('Desktop mode - appending to body'); // Debug log
         document.body.appendChild(panel);
-        
-        // Trigger slide-in animation
         setTimeout(() => {
             panel.classList.add('active');
         }, 10);
     }
     
-    // Add zoom button listeners with safety checks
+    // Add zoom button listeners
     setTimeout(() => {
         const zoomInBtn = document.getElementById('zoom-in');
         const zoomOutBtn = document.getElementById('zoom-out');
@@ -370,14 +469,11 @@ function showDetectionPanel(detection, imgElement) {
 function closeDetectionPanel() {
     const isMobile = window.innerWidth <= 768;
     
-    // Step 1: Remove the panel
     const panel = document.querySelector('.info-panel');
     if (panel) {
         if (isMobile) {
-            // Mobile: remove immediately
             panel.remove();
         } else {
-            // Desktop: animate out
             panel.classList.remove('active');
             setTimeout(() => {
                 panel.remove();
@@ -385,7 +481,6 @@ function closeDetectionPanel() {
         }
     }
     
-    // Step 2: Remove blur canvas
     const blurCanvas = document.getElementById('blur-canvas');
     if (blurCanvas) {
         blurCanvas.classList.remove('active');
@@ -394,7 +489,6 @@ function closeDetectionPanel() {
         }, isMobile ? 0 : 300);
     }
     
-    // Step 3: Reset image state
     const imgElement = document.getElementById('result-image');
     if (imgElement && originalImageSrc) {
         imgElement.src = originalImageSrc;
@@ -403,30 +497,22 @@ function closeDetectionPanel() {
         imgElement.style.cursor = 'default';
     }
     
-    // Step 4: Reset container state
     const imageContainer = document.getElementById('image-container');
     if (imageContainer) {
         imageContainer.classList.remove('shifted');
         imageContainer.style.cursor = 'default';
     }
     
-    // Step 5: Remove overlay highlights
     const allOverlays = document.querySelectorAll('.bbox-overlay');
     allOverlays.forEach(overlay => {
         overlay.classList.remove('active');
         overlay.style.backgroundColor = 'transparent';
     });
     
-    // Step 6: Remove zoom/pan event listeners from image
     if (imgElement) {
-        imgElement.removeEventListener('mousedown', handleMouseDown);
-        imgElement.removeEventListener('mousemove', handleMouseMove);
-        imgElement.removeEventListener('mouseup', handleMouseUp);
-        imgElement.removeEventListener('mouseleave', handleMouseUp);
-        imgElement.removeEventListener('wheel', handleWheel);
+        removeZoomPanControls(imgElement);
     }
     
-    // Step 7: Reset global state
     activeDetectionId = null;
     activeBbox = null;
     zoomLevel = 1;
@@ -434,13 +520,16 @@ function closeDetectionPanel() {
     panY = 0;
     isDragging = false;
     
-    // Step 8: Wait for image to fully reset, then re-attach bbox click handlers
     setTimeout(() => {
         if (imgElement && currentDetections && currentDetections.length > 0) {
             setupImageClickHandlers(imgElement, currentDetections);
         }
     }, isMobile ? 150 : 450);
 }
+
+// ============================================
+// ZOOM AND PAN CONTROLS
+// ============================================
 
 function setupZoomPanControls(imgElement) {
     const imageContainer = document.getElementById('image-container');
@@ -540,37 +629,28 @@ function zoomTowardsBbox(newZoom) {
     const displayWidth = imgElement.offsetWidth;
     const displayHeight = imgElement.offsetHeight;
     
-    // Calculate scale factors from natural to displayed size
     const scaleX = displayWidth / imgNaturalWidth;
     const scaleY = displayHeight / imgNaturalHeight;
     
-    // Get bbox center in natural image coordinates
     const bboxCenterXNatural = (activeBbox.x1 + activeBbox.x2) / 2;
     const bboxCenterYNatural = (activeBbox.y1 + activeBbox.y2) / 2;
     
-    // Convert to displayed image coordinates (before any zoom/pan)
     const bboxCenterXDisplayed = bboxCenterXNatural * scaleX;
     const bboxCenterYDisplayed = bboxCenterYNatural * scaleY;
     
-    // Get the image container dimensions
     const imageContainer = document.getElementById('image-container');
     const containerWidth = imageContainer.offsetWidth;
     const containerHeight = imageContainer.offsetHeight;
     
-    // Calculate where the image is positioned in the container (it's centered)
     const imgOffsetLeft = (containerWidth - displayWidth) / 2;
     const imgOffsetTop = (containerHeight - displayHeight) / 2;
     
-    // Calculate the absolute position of bbox center in the container
     const bboxAbsoluteX = imgOffsetLeft + bboxCenterXDisplayed;
     const bboxAbsoluteY = imgOffsetTop + bboxCenterYDisplayed;
     
-    // Container center
     const containerCenterX = containerWidth / 2;
     const containerCenterY = containerHeight / 2;
     
-    // Calculate how much to pan to center the bbox
-    // Pan is applied AFTER scale, so we divide by the new zoom level
     panX = (containerCenterX - bboxAbsoluteX) * newZoom;
     panY = (containerCenterY - bboxAbsoluteY) * newZoom;
     
@@ -580,7 +660,6 @@ function zoomTowardsBbox(newZoom) {
 
 function updateImageTransform() {
     const imgElement = document.getElementById('result-image');
-    // Set transform origin to top-left so our calculations are consistent
     imgElement.style.transformOrigin = '0 0';
     imgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
     imgElement.style.transition = 'transform 0.2s ease-out';
@@ -601,27 +680,14 @@ function updateBlurCanvas(imgElement, bbox) {
     }
 }
 
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeDetectionPanel();
     }
 });
 
-
 window.closeDetectionPanel = closeDetectionPanel;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
