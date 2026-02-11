@@ -32,13 +32,11 @@ document.getElementById('upload-form').addEventListener('submit', async function
     e.preventDefault();
 
     const fileInput = document.getElementById('image-input');
+
     if (!fileInput.files || !fileInput.files[0]) {
         alert('Please select an image file');
         return;
     }
-
-    // Close any open detection panel
-    closeDetectionPanel();
 
     const submitButton = this.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.textContent;
@@ -47,7 +45,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = async function () {
         try {
             const response = await fetch(
@@ -60,75 +58,29 @@ document.getElementById('upload-form').addEventListener('submit', async function
                     })
                 }
             );
-    
+
             if (!response.ok) throw new Error("Network error");
-    
+
             const result = await response.json();
-    
+
             const resultImage = result.data[0];
             const detectionText = result.data[1];
-    
+
             document.getElementById('result-image').src = resultImage;
             document.getElementById('detections-text').textContent = detectionText;
             document.getElementById('result-container').style.display = 'block';
-    
+
         } catch (error) {
-            console.error(error);
-            alert("Error processing image");
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง');
         } finally {
             submitButton.textContent = originalButtonText;
             submitButton.disabled = false;
         }
-        };
-        
-        reader.readAsDataURL(file);
+    };
 
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-
-        // Gradio returns [image, text]
-        const resultImage = data.data[0]?.url;
-        const detectionText = data.data[1];
-
-        document.getElementById('result-image').src = resultImage;
-        document.getElementById('detections-text').textContent = detectionText;
-
-        // Handle base64 image (if backend sends it)
-        if (data.result_image_base64) {
-            const imgElement = document.getElementById('result-image');
-
-            originalImageSrc = 'data:image/jpeg;base64,' + data.result_image_base64;
-            imgElement.src = originalImageSrc;
-
-            currentDetections = data.detections || [];
-
-            // Store uploaded original image (without bbox)
-            const uploadedFile = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = function (event) {
-                originalImageWithoutBboxSrc = event.target.result;
-            };
-
-            reader.readAsDataURL(uploadedFile);
-
-            imgElement.onload = function () {
-                if (currentDetections.length > 0) {
-                    setupImageClickHandlers(imgElement, currentDetections);
-                }
-            };
-        }
-
-        document.getElementById('result-container').style.display = 'block';
-
-        document.getElementById('result-container').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
+    reader.readAsDataURL(file);
+});
 
         // Clear file input
         fileInput.value = '';
@@ -670,6 +622,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
