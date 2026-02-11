@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lichen Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
+    <h1>Lichen Detection</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="image-input" accept="image/*" required>
+        <button type="submit">Predict</button>
+    </form>
+
+    <div id="result-container" style="display: none">
+        <div class="result">
+            <div id="main-container">
+                <div id="image-container">
+                    <img id="result-image" alt="Result Image">
+                </div>
+            </div>
+            <div class="labels">
+                <strong>Detected Objects:</strong>
+                <ul id="result-classes"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
