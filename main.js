@@ -138,10 +138,10 @@ document.getElementById('upload-form').addEventListener('submit', async function
                 const base64Image = e.target.result;
                 
                 // For Gradio API, we need to use their specific format
-                console.log('Sending request to Gradio API:', `${apiUrl}`);
+                console.log('Sending request to Gradio API:', `${apiUrl}/call/predict_api`);
                 
                 // Try the Gradio Python API client format
-                const response = await fetch(`${apiUrl}`, {
+                const response = await fetch(`${apiUrl}/call/predict_api`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -710,6 +710,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
