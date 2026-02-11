@@ -123,7 +123,7 @@ async function handleImageUpload(e) {
 
         console.log("Gradio result:", result);
 
-        const resultData = result.data;
+        const resultData = result.data[0];
 
         if (!resultData.success) {
             throw new Error(resultData.error || "Detection failed");
@@ -515,5 +515,6 @@ function updateBlurCanvas() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetectionPanel(); });
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
