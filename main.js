@@ -1,3 +1,5 @@
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+
 // ============================================
 // CONFIGURATION
 // ============================================
@@ -101,12 +103,6 @@ async function handleImageUpload(e) {
         return;
     }
 
-    const apiUrl = getApiUrl();
-    if (!apiUrl || apiUrl === 'http://localhost:7860') {
-        alert('Please enter your Hugging Face Space URL in the Backend API URL field');
-        return;
-    }
-
     closeDetectionPanel();
 
     const submitButton = document.querySelector('#upload-form button[type="submit"]');
@@ -117,67 +113,32 @@ async function handleImageUpload(e) {
     const file = fileInput.files[0];
 
     try {
-        // Step 1: Convert image file → base64 data URL
-        const base64Image = await fileToBase64(file);
+        // Connect to your Hugging Face Space
+        const client = await Client.connect("PjetpAAAAAk/lichen-detection-api");
 
-        // Step 2: POST to Gradio's named API endpoint
-        // Gradio /call/<api_name> expects { data: [...inputs] }
-        // then you GET /call/<api_name>/<event_id> to retrieve the result.
-        // But for simple JSON outputs the /call endpoint returns the result directly.
-        const callUrl = `${apiUrl}/call/predict_api`;
-        console.log('POST →', callUrl);
-
-        const postResp = await fetch(callUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: [base64Image] })
+        // Call the API endpoint by its api_name
+        const result = await client.predict("/predict_api", {
+            image: file
         });
 
-        if (!postResp.ok) {
-            const txt = await postResp.text();
-            throw new Error(`POST failed (${postResp.status}): ${txt}`);
-        }
+        console.log("Gradio result:", result);
 
-        const postJson = await postResp.json();
-        console.log('POST response:', postJson);
-
-        const resultData = postJson;
+        const resultData = result.data;
 
         if (!resultData.success) {
-            throw new Error(resultData.error || 'Detection failed');
+            throw new Error(resultData.error || "Detection failed");
         }
-        
+
         const imgElement = document.getElementById('result-image');
+
         originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
         imgElement.src = originalImageSrc;
-        
+
         currentDetections = resultData.detections || [];
-        originalImageWithoutBboxSrc = base64Image;
-        
+        originalImageWithoutBboxSrc = originalImageSrc;
+
         imgElement.onload = function () {
             setupImageClickHandlers(imgElement, currentDetections);
-        };
-        
-        document.getElementById('result-container').style.display = 'block';
-        document.getElementById('result-container').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-
-        // Step 4: Use the result
-        if (!resultData.success) {
-            throw new Error(resultData.error || 'Detection failed');
-        }
-
-        const imgElement = document.getElementById('result-image');
-        originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
-        imgElement.src = originalImageSrc;
-
-        currentDetections = resultData.detections || [];
-        originalImageWithoutBboxSrc = base64Image;
-
-        imgElement.onload = function () {
-            setupImageClickHandlers(imgElement, resultData.detections || []);
         };
 
         document.getElementById('result-container').style.display = 'block';
@@ -554,4 +515,5 @@ function updateBlurCanvas() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetectionPanel(); });
 window.closeDetectionPanel = closeDetectionPanel;
+
 
