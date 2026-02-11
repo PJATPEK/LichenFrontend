@@ -45,28 +45,26 @@ document.getElementById('upload-form').addEventListener('submit', async function
             method: "POST",
             body: formData
         });
-
+    
         if (!response.ok) throw new Error("Network response was not ok");
-
+    
         let data = await response.json();
-
-        // Gradio returns [image, text]
+    
         const resultImage = data.data[0].url;
         const detectionText = data.data[1];
-
+    
         document.getElementById("result-image").src = resultImage;
         document.getElementById("detections-text").textContent = detectionText;
-
         document.getElementById("result-container").style.display = "block";
-
-       } catch (error) {
+    
+    } catch (error) {
         console.error("Error:", error);
         alert("เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง");
     } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled = false;
     }
-    ); 
+
 
     // Close any open info panel before processing new image
     closeDetectionPanel();
@@ -662,6 +660,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
