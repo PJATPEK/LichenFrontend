@@ -28,7 +28,7 @@ let isDragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
-document.getElementById('upload-form').addEventListener('submit', async function(e) {
+document.getElementById('upload-form').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const fileInput = document.getElementById('image-input');
@@ -37,36 +37,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
         return;
     }
 
-    const formData = new FormData();
-    formData.append("image", fileInput.files[0]);
-
-    try {
-        let response = await fetch("https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface", {
-            method: "POST",
-            body: formData
-        });
-    
-        if (!response.ok) throw new Error("Network response was not ok");
-    
-        let data = await response.json();
-    
-        const resultImage = data.data[0].url;
-        const detectionText = data.data[1];
-    
-        document.getElementById("result-image").src = resultImage;
-        document.getElementById("detections-text").textContent = detectionText;
-        document.getElementById("result-container").style.display = "block";
-    
-    } catch (error) {
-        console.error("Error:", error);
-        alert("เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
-    }
-
-
-    // Close any open info panel before processing new image
+    // Close any open detection panel
     closeDetectionPanel();
 
     const submitButton = this.querySelector('button[type="submit"]');
@@ -74,56 +45,67 @@ document.getElementById('upload-form').addEventListener('submit', async function
     submitButton.textContent = 'Processing...';
     submitButton.disabled = true;
 
-    let formData = new FormData();
+    const formData = new FormData();
     formData.append('image', fileInput.files[0]);
 
     try {
-        let response = await fetch('https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface', {
-            method: 'POST',
-            body: formData
-        });
+        const response = await fetch(
+            'https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface',
+            {
+                method: 'POST',
+                body: formData
+            }
+        );
 
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
 
-        let data = await response.json();
+        const data = await response.json();
 
-        // Gradio returns an array [image, text]
-        const resultImage = data.data[0].url;   // image URL
-        const detectionText = data.data[1];     // text description
-        
+        // Gradio returns [image, text]
+        const resultImage = data.data[0]?.url;
+        const detectionText = data.data[1];
+
         document.getElementById('result-image').src = resultImage;
         document.getElementById('detections-text').textContent = detectionText;
 
+        // Handle base64 image (if backend sends it)
         if (data.result_image_base64) {
             const imgElement = document.getElementById('result-image');
+
             originalImageSrc = 'data:image/jpeg;base64,' + data.result_image_base64;
             imgElement.src = originalImageSrc;
-            
-            currentDetections = data.detections;
-            
-            // Also store the uploaded image as the original without bbox
+
+            currentDetections = data.detections || [];
+
+            // Store uploaded original image (without bbox)
             const uploadedFile = fileInput.files[0];
             const reader = new FileReader();
-            reader.onload = function(e) {
-                originalImageWithoutBboxSrc = e.target.result;
+
+            reader.onload = function (event) {
+                originalImageWithoutBboxSrc = event.target.result;
             };
+
             reader.readAsDataURL(uploadedFile);
-            
-            imgElement.onload = function() {
-                setupImageClickHandlers(imgElement, data.detections);
+
+            imgElement.onload = function () {
+                if (currentDetections.length > 0) {
+                    setupImageClickHandlers(imgElement, currentDetections);
+                }
             };
         }
 
         document.getElementById('result-container').style.display = 'block';
-        
-        document.getElementById('result-container').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+
+        document.getElementById('result-container').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
         });
-        
-        // Clear the file input so the filename disappears
+
+        // Clear file input
         fileInput.value = '';
-        
+
     } catch (error) {
         console.error('Error:', error);
         alert('เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง');
@@ -132,6 +114,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
         submitButton.disabled = false;
     }
 });
+
 
 function setupImageClickHandlers(imgElement, detections) {
     const imageContainer = document.getElementById('image-container');
@@ -660,6 +643,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
