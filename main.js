@@ -275,7 +275,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled = false;
-    });
+    }
 
 // ============================================
 // IMAGE INTERACTION SETUP
@@ -778,5 +778,6 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
