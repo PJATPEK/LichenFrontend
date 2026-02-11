@@ -82,19 +82,6 @@ document.getElementById('upload-form').addEventListener('submit', function (e) {
     reader.readAsDataURL(file);
 });
 
-        // Clear file input
-        fileInput.value = '';
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง');
-    } finally {
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
-    }
-});
-
-
 function setupImageClickHandlers(imgElement, detections) {
     const imageContainer = document.getElementById('image-container');
     
@@ -622,6 +609,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
