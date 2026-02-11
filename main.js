@@ -2,12 +2,10 @@
 // CONFIGURATION
 // ============================================
 
-// Get API URL from input field or use default
 function getApiUrl() {
     const apiUrlInput = document.getElementById('api-url');
     let url = apiUrlInput ? apiUrlInput.value.trim() : '';
     
-    // Remove trailing slash if present
     if (url.endsWith('/')) {
         url = url.slice(0, -1);
     }
@@ -25,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
         testConnectionBtn.addEventListener('click', testBackendConnection);
     }
     
-    // Auto-test connection on page load
     setTimeout(testBackendConnection, 500);
 });
 
@@ -43,7 +40,6 @@ async function testBackendConnection() {
     statusElement.className = '';
     
     try {
-        // Test if Gradio is accessible
         const response = await fetch(`${apiUrl}/`, {
             method: 'GET',
             mode: 'cors'
@@ -106,11 +102,18 @@ let lastMouseY = 0;
 // IMAGE UPLOAD AND PREDICTION
 // ============================================
 
-document.getElementById('upload-form').addEventListener('submit', async function(e) {
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleImageUpload);
+    }
+});
+
+async function handleImageUpload(e) {
     e.preventDefault();
     
     const fileInput = document.getElementById('image-input');
-    if (!fileInput.files || !fileInput.files[0]) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
         alert('Please select an image file');
         return;
     }
@@ -123,159 +126,95 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
     closeDetectionPanel();
 
-    const submitButton = this.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.textContent;
-    submitButton.textContent = 'Processing...';
-    submitButton.disabled = true;
-
-    try {
-        // Read image as base64
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = async function(e) {
-            try {
-                const base64Image = e.target.result;
-                
-                // For Gradio API, we need to use their specific format
-                console.log('Sending request to Gradio API:', `${apiUrl}/api/predict`);
-                
-                // Try the Gradio Python API client format
-                const response = await fetch(`${apiUrl}/api/predict`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        data: [base64Image]
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('API Response:', result);
-                
-                // Gradio returns data in result.data array
-                if (result.data && result.data.length > 0) {
-                    const apiData = result.data[0];
-                    
-                    if (apiData.result_image_base64) {
-                        const imgElement = document.getElementById('result-image');
-                        originalImageSrc = 'data:image/jpeg;base64,' + apiData.result_image_base64;
-                        imgElement.src = originalImageSrc;
-                        
-                        currentDetections = apiData.detections || [];
-                        originalImageWithoutBboxSrc = base64Image;
-                        
-                        imgElement.onload = function() {
-                            setupImageClickHandlers(imgElement, apiData.detections || []);
-                        };
-                        
-                        document.getElementById('result-container').style.display = 'block';
-                        document.getElementById('result-container').scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start' 
-                        });
-                    }
-                }
-                
-                fileInput.value = '';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
-            } finally {
-                submitButton.textContent = originalButtonText;
-                submitButton.disabled = false;
-            }
-        };
-        
-        reader.onerror = function() {
-            alert('Error reading file');
-            submitButton.textContent = originalButtonText;
-            submitButton.disabled = false;
-        };
-        
-        reader.readAsDataURL(file);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
+    const submitButton = document.querySelector('#upload-form button[type="submit"]');
+    if (!submitButton) {
+        console.error('Submit button not found');
+        return;
     }
-});
-
-    // Close any open info panel before processing new image
-    closeDetectionPanel();
-
-    const submitButton = this.querySelector('button[type="submit"]');
+    
     const originalButtonText = submitButton.textContent;
     submitButton.textContent = 'Processing...';
     submitButton.disabled = true;
 
-    let formData = new FormData();
-    formData.append('image', fileInput.files[0]);
-
+    const file = fileInput.files[0];
+    
     try {
-        console.log('Sending request to:', `${apiUrl}/predict`);
+        // Convert image to base64
+        const base64Image = await fileToBase64(file);
         
-        let response = await fetch(`${apiUrl}/predict`, {
+        console.log('Sending request to Gradio API:', `${apiUrl}/api/predict`);
+        
+        // Call Gradio API - CORRECT FORMAT
+        const response = await fetch(`${apiUrl}/api/predict`, {
             method: 'POST',
-            body: formData,
-            mode: 'cors'
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                data: [base64Image]  // Gradio expects data array with base64 image
+            })
         });
 
         console.log('Response status:', response.status);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Server error: ${response.status}`);
+            throw new Error(`Server error: ${response.status}`);
         }
 
-        let data = await response.json();
-        console.log('Response data:', data);
-
-        if (data.result_image_base64) {
-            const imgElement = document.getElementById('result-image');
-            originalImageSrc = 'data:image/jpeg;base64,' + data.result_image_base64;
-            imgElement.src = originalImageSrc;
+        const result = await response.json();
+        console.log('API Response:', result);
+        
+        // Process Gradio response
+        if (result.data && result.data.length > 0) {
+            const apiData = result.data[0];
             
-            currentDetections = data.detections || [];
-            
-            // Also store the uploaded image as the original without bbox
-            const uploadedFile = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                originalImageWithoutBboxSrc = e.target.result;
-            };
-            reader.readAsDataURL(uploadedFile);
-            
-            imgElement.onload = function() {
-                setupImageClickHandlers(imgElement, data.detections || []);
-            };
+            // Check if we got the expected data structure
+            if (apiData && apiData.result_image_base64) {
+                const imgElement = document.getElementById('result-image');
+                originalImageSrc = 'data:image/jpeg;base64,' + apiData.result_image_base64;
+                imgElement.src = originalImageSrc;
+                
+                currentDetections = apiData.detections || [];
+                originalImageWithoutBboxSrc = base64Image;
+                
+                imgElement.onload = function() {
+                    setupImageClickHandlers(imgElement, apiData.detections || []);
+                };
+                
+                document.getElementById('result-container').style.display = 'block';
+                document.getElementById('result-container').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            } else {
+                console.error('Unexpected response format:', apiData);
+                alert('Received unexpected response format from server');
+            }
+        } else {
+            console.error('No data in response:', result);
+            alert('No detection data received from server');
         }
-
-        document.getElementById('result-container').style.display = 'block';
         
-        document.getElementById('result-container').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-        
-        // Clear the file input so the filename disappears
         fileInput.value = '';
         
     } catch (error) {
         console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message + '\n\nกรุณาตรวจสอบว่า Backend API URL ถูกต้องและ API กำลังทำงานอยู่');
+        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message + '\n\nกรุณาตรวจสอบว่า Backend API URL ถูกต้อง');
     } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled = false;
     }
+}
+
+// Helper function to convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
 
 // ============================================
 // IMAGE INTERACTION SETUP
@@ -297,19 +236,14 @@ function setupImageClickHandlers(imgElement, detections) {
         return;
     }
     
-    // Wait for image to fully render
     setTimeout(() => {
         const imgNaturalWidth = imgElement.naturalWidth;
         const imgNaturalHeight = imgElement.naturalHeight;
-        
-        // Calculate actual displayed dimensions
         const imgDisplayWidth = imgElement.offsetWidth;
         const imgDisplayHeight = imgElement.offsetHeight;
         
         const scaleX = imgDisplayWidth / imgNaturalWidth;
         const scaleY = imgDisplayHeight / imgNaturalHeight;
-        
-        // Calculate offset of image within container
         const imgOffsetLeft = imgElement.offsetLeft;
         const imgOffsetTop = imgElement.offsetTop;
         
@@ -365,32 +299,26 @@ function applySelectiveBlur(imgElement, bbox) {
         existingCanvas.remove();
     }
     
-    // Switch to original image without bounding boxes
     if (originalImageWithoutBboxSrc) {
         imgElement.src = originalImageWithoutBboxSrc;
     }
     
-    // Wait for image to load, then apply blur
     const applyBlur = () => {
         const canvas = document.createElement('canvas');
         canvas.id = 'blur-canvas';
         const ctx = canvas.getContext('2d');
         
-        // Get exact displayed dimensions
         const imgNaturalWidth = imgElement.naturalWidth;
         const imgNaturalHeight = imgElement.naturalHeight;
         const displayWidth = imgElement.offsetWidth;
         const displayHeight = imgElement.offsetHeight;
         
-        // Set canvas size to match displayed image
         canvas.width = displayWidth;
         canvas.height = displayHeight;
         
-        // Calculate scale factors
         const scaleX = displayWidth / imgNaturalWidth;
         const scaleY = displayHeight / imgNaturalHeight;
         
-        // Scale bounding box coordinates
         const x1 = bbox.x1 * scaleX;
         const y1 = bbox.y1 * scaleY;
         const x2 = bbox.x2 * scaleX;
@@ -399,16 +327,13 @@ function applySelectiveBlur(imgElement, bbox) {
         const img = new Image();
         img.src = originalImageWithoutBboxSrc || originalImageSrc;
         img.onload = function() {
-            // Draw entire image blurred
             ctx.filter = 'blur(8px)';
             ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
             
-            // Cut out the bounding box area
             ctx.filter = 'none';
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
             
-            // Position canvas exactly over the image
             canvas.style.position = 'absolute';
             canvas.style.top = imgElement.offsetTop + 'px';
             canvas.style.left = imgElement.offsetLeft + 'px';
@@ -439,10 +364,8 @@ function showDetectionPanel(detection, imgElement) {
     activeDetectionId = detection.id;
     activeBbox = detection.bbox;
     
-    // Check if mobile FIRST
     const isMobile = window.innerWidth <= 768;
     
-    // Remove existing panel if any
     const existingPanel = document.querySelector('.info-panel');
     if (existingPanel) {
         existingPanel.remove();
@@ -451,14 +374,11 @@ function showDetectionPanel(detection, imgElement) {
     const imageContainer = document.getElementById('image-container');
     imageContainer.classList.add('shifted');
     
-    // Reset zoom and pan
     zoomLevel = 1;
     panX = 0;
     panY = 0;
     
     applySelectiveBlur(imgElement, detection.bbox);
-    
-    // Add zoom and pan controls
     setupZoomPanControls(imgElement);
     
     const allOverlays = document.querySelectorAll('.bbox-overlay');
@@ -471,11 +391,9 @@ function showDetectionPanel(detection, imgElement) {
         activeOverlay.classList.add('active');
     }
     
-    // Create the panel
     const panel = document.createElement('div');
     panel.className = 'info-panel';
     
-    // CRITICAL: Force mobile styles immediately if on mobile
     if (isMobile) {
         panel.style.position = 'relative';
         panel.style.right = 'auto';
@@ -523,7 +441,6 @@ function showDetectionPanel(detection, imgElement) {
     panel.appendChild(closeBtn);
     panel.appendChild(panelContent);
     
-    // Append panel to correct location
     if (isMobile) {
         const mainContainer = document.getElementById('main-container');
         if (mainContainer) {
@@ -541,7 +458,6 @@ function showDetectionPanel(detection, imgElement) {
         }, 10);
     }
     
-    // Add zoom button listeners
     setTimeout(() => {
         const zoomInBtn = document.getElementById('zoom-in');
         const zoomOutBtn = document.getElementById('zoom-out');
@@ -562,18 +478,14 @@ function closeDetectionPanel() {
             panel.remove();
         } else {
             panel.classList.remove('active');
-            setTimeout(() => {
-                panel.remove();
-            }, 400);
+            setTimeout(() => panel.remove(), 400);
         }
     }
     
     const blurCanvas = document.getElementById('blur-canvas');
     if (blurCanvas) {
         blurCanvas.classList.remove('active');
-        setTimeout(() => {
-            blurCanvas.remove();
-        }, isMobile ? 0 : 300);
+        setTimeout(() => blurCanvas.remove(), isMobile ? 0 : 300);
     }
     
     const imgElement = document.getElementById('result-image');
@@ -778,6 +690,3 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
-
-
-
