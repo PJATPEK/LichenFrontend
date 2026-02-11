@@ -49,8 +49,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     formData.append('image', fileInput.files[0]);
 
     try {
-        const response = await fetch(
-            'https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface',
+        const response = await fetch('https://pjetpaaaaak-lichen-detection-api.hf.space/predict',
             {
                 method: 'POST',
                 body: formData
@@ -643,6 +642,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
