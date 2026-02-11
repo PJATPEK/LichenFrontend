@@ -138,31 +138,44 @@ async function handleImageUpload(e) {
 
     const file = fileInput.files[0];
     
-    try {
-        // Convert image to base64
-        const base64Image = await fileToBase64(file);
-        
-        console.log('Sending request to Gradio API:', `${apiUrl}/api/predict`);
-        
-        // Call Gradio API - CORRECT FORMAT
-        const response = await fetch(`${apiUrl}/api/predict`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: [base64Image]  // Gradio expects data array with base64 image
-            })
-        });
+   try {
+    console.log("Sending request to:", `${apiUrl}/call/predict_api`);
 
-        console.log('Response status:', response.status);
+    const formData = new FormData();
+    formData.append("data", file);   // IMPORTANT: key must be "data"
 
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
+    const response = await fetch(`${apiUrl}/call/predict_api`, {
+        method: "POST",
+        body: formData
+    });
 
-        const result = await response.json();
-        console.log('API Response:', result);
+    console.log("Response status:", response.status);
+
+    if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("API Response:", result);
+
+    // Gradio call endpoints usually return { data: [...] }
+    const resultImage = result.data?.[0];
+    const detectionText = result.data?.[1];
+
+    if (resultImage) {
+        document.getElementById("result-image").src = resultImage;
+    }
+
+    if (detectionText) {
+        document.getElementById("detections-text").textContent = detectionText;
+    }
+
+    document.getElementById("result-container").style.display = "block";
+
+} catch (error) {
+    console.error("Error:", error);
+    alert("เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง");
+}
         
         // Process Gradio response
         if (result.data && result.data.length > 0) {
@@ -690,3 +703,4 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
+
