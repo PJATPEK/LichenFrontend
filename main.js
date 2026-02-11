@@ -209,74 +209,6 @@ document.getElementById('upload-form').addEventListener('submit', async function
     }
 });
 
-    // Close any open info panel before processing new image
-    closeDetectionPanel();
-
-    const submitButton = this.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.textContent;
-    submitButton.textContent = 'Processing...';
-    submitButton.disabled = true;
-
-    let formData = new FormData();
-    formData.append('image', fileInput.files[0]);
-
-    try {
-        console.log('Sending request to:', `${apiUrl}/predict`);
-        
-        let response = await fetch(`${apiUrl}/predict`, {
-            method: 'POST',
-            body: formData,
-            mode: 'cors'
-        });
-
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Server error: ${response.status}`);
-        }
-
-        let data = await response.json();
-        console.log('Response data:', data);
-
-        if (data.result_image_base64) {
-            const imgElement = document.getElementById('result-image');
-            originalImageSrc = 'data:image/jpeg;base64,' + data.result_image_base64;
-            imgElement.src = originalImageSrc;
-            
-            currentDetections = data.detections || [];
-            
-            // Also store the uploaded image as the original without bbox
-            const uploadedFile = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                originalImageWithoutBboxSrc = e.target.result;
-            };
-            reader.readAsDataURL(uploadedFile);
-            
-            imgElement.onload = function() {
-                setupImageClickHandlers(imgElement, data.detections || []);
-            };
-        }
-
-        document.getElementById('result-container').style.display = 'block';
-        
-        document.getElementById('result-container').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-        
-        // Clear the file input so the filename disappears
-        fileInput.value = '';
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message + '\n\nกรุณาตรวจสอบว่า Backend API URL ถูกต้องและ API กำลังทำงานอยู่');
-    } finally {
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
-    }
-
 // ============================================
 // IMAGE INTERACTION SETUP
 // ============================================
@@ -778,6 +710,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
