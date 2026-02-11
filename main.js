@@ -43,16 +43,16 @@ async function testBackendConnection() {
     statusElement.className = '';
     
     try {
-        const response = await fetch(`${apiUrl}/health`, {
+        // Test if Gradio is accessible
+        const response = await fetch(`${apiUrl}/`, {
             method: 'GET',
             mode: 'cors'
         });
         
         if (response.ok) {
-            const data = await response.json();
             statusElement.textContent = '✓ Connected';
             statusElement.className = 'success';
-            console.log('Backend health check:', data);
+            console.log('Backend is accessible');
         } else {
             throw new Error(`Backend responded with status ${response.status}`);
         }
@@ -120,6 +120,94 @@ document.getElementById('upload-form').addEventListener('submit', async function
         alert('Please enter your Hugging Face Space URL in the Backend API URL field');
         return;
     }
+
+    closeDetectionPanel();
+
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Processing...';
+    submitButton.disabled = true;
+
+    try {
+        // Read image as base64
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                const base64Image = e.target.result;
+                
+                // For Gradio API, we need to use their specific format
+                console.log('Sending request to Gradio API:', `${apiUrl}/api/predict`);
+                
+                // Try the Gradio Python API client format
+                const response = await fetch(`${apiUrl}/api/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        data: [base64Image]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                // Gradio returns data in result.data array
+                if (result.data && result.data.length > 0) {
+                    const apiData = result.data[0];
+                    
+                    if (apiData.result_image_base64) {
+                        const imgElement = document.getElementById('result-image');
+                        originalImageSrc = 'data:image/jpeg;base64,' + apiData.result_image_base64;
+                        imgElement.src = originalImageSrc;
+                        
+                        currentDetections = apiData.detections || [];
+                        originalImageWithoutBboxSrc = base64Image;
+                        
+                        imgElement.onload = function() {
+                            setupImageClickHandlers(imgElement, apiData.detections || []);
+                        };
+                        
+                        document.getElementById('result-container').style.display = 'block';
+                        document.getElementById('result-container').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                    }
+                }
+                
+                fileInput.value = '';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
+            } finally {
+                submitButton.textContent = originalButtonText;
+                submitButton.disabled = false;
+            }
+        };
+        
+        reader.onerror = function() {
+            alert('Error reading file');
+            submitButton.textContent = originalButtonText;
+            submitButton.disabled = false;
+        };
+        
+        reader.readAsDataURL(file);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
+        submitButton.textContent = originalButtonText;
+        submitButton.disabled = false;
+    }
+});
 
     // Close any open info panel before processing new image
     closeDetectionPanel();
@@ -691,3 +779,4 @@ document.addEventListener('keydown', function(e) {
 });
 
 window.closeDetectionPanel = closeDetectionPanel;
+
