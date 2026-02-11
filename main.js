@@ -70,7 +70,7 @@ document.getElementById('upload-form').addEventListener('submit', function (e) {
             document.getElementById('detections-text').textContent = detectionText;
             document.getElementById('result-container').style.display = 'block';
 
-        catch (error) {
+        } catch (error) {
             console.error('Error:', error);
             alert('เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง');
         } finally {
@@ -622,6 +622,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
