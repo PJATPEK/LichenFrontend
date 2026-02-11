@@ -49,7 +49,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     formData.append('image', fileInput.files[0]);
 
     try {
-        let response = await fetch('https://PjetpAAAAAk-lichen-detection-api.hf.space/predict', {
+        let response = await fetch('https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface', {
             method: 'POST',
             body: formData
         });
@@ -57,6 +57,13 @@ document.getElementById('upload-form').addEventListener('submit', async function
         if (!response.ok) throw new Error('Network response was not ok');
 
         let data = await response.json();
+
+        // Gradio returns an array [image, text]
+        const resultImage = data.data[0].url;   // image URL
+        const detectionText = data.data[1];     // text description
+        
+        document.getElementById('result-image').src = resultImage;
+        document.getElementById('detections-text').textContent = detectionText;
 
         if (data.result_image_base64) {
             const imgElement = document.getElementById('result-image');
@@ -624,3 +631,4 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
