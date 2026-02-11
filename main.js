@@ -59,11 +59,14 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
         document.getElementById("result-container").style.display = "block";
 
-    } catch (error) {
+       } catch (error) {
         console.error("Error:", error);
         alert("เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+        submitButton.textContent = originalButtonText;
+        submitButton.disabled = false;
     }
-});
+    }); 
 
     // Close any open info panel before processing new image
     closeDetectionPanel();
@@ -659,6 +662,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
