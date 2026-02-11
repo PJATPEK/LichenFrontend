@@ -28,7 +28,7 @@ let isDragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 
-document.getElementById('upload-form').addEventListener('submit', async function (e) {
+document.getElementById('upload-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
     const fileInput = document.getElementById('image-input');
@@ -622,6 +622,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
