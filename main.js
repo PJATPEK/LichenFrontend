@@ -49,7 +49,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     formData.append('image', fileInput.files[0]);
 
     try {
-        let response = await fetch('/predict', {
+        let response = await fetch('https://PjetpAAAAAk-lichen-detection-api.hf.space/predict', {
             method: 'POST',
             body: formData
         });
@@ -621,5 +621,6 @@ document.addEventListener('keydown', function(e) {
         closeDetectionPanel();
     }
 });
+
 
 window.closeDetectionPanel = closeDetectionPanel;
