@@ -45,16 +45,44 @@ document.getElementById('upload-form').addEventListener('submit', async function
     submitButton.textContent = 'Processing...';
     submitButton.disabled = true;
 
-    const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = async function () {
+        try {
+            const response = await fetch(
+                'https://pjetpaaaaak-lichen-detection-api.hf.space/api/predict',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: [reader.result]
+                    })
+                }
+            );
+    
+            if (!response.ok) throw new Error("Network error");
+    
+            const result = await response.json();
+    
+            const resultImage = result.data[0];
+            const detectionText = result.data[1];
+    
+            document.getElementById('result-image').src = resultImage;
+            document.getElementById('detections-text').textContent = detectionText;
+            document.getElementById('result-container').style.display = 'block';
+    
+        } catch (error) {
+            console.error(error);
+            alert("Error processing image");
+        } finally {
+            submitButton.textContent = originalButtonText;
+            submitButton.disabled = false;
+        }
+        };
+        
+        reader.readAsDataURL(file);
 
-    try {
-        const response = await fetch('https://pjetpaaaaak-lichen-detection-api.hf.space/predict',
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
 
         if (!response.ok) {
             throw new Error('Network response was not ok');
@@ -642,6 +670,7 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
 
 
