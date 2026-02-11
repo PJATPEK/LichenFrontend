@@ -30,12 +30,38 @@ let lastMouseY = 0;
 
 document.getElementById('upload-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const fileInput = document.getElementById('image-input');
     if (!fileInput.files || !fileInput.files[0]) {
         alert('Please select an image file');
         return;
     }
+
+    const formData = new FormData();
+    formData.append("image", fileInput.files[0]);  // must match Gradio input name
+
+    try {
+        let response = await fetch("https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) throw new Error("Network response was not ok");
+
+        let data = await response.json();
+
+        // Gradio returns an array [image, text]
+        const resultImage = data.data[0].url;
+        const detectionText = data.data[1];
+
+        document.getElementById("result-image").src = resultImage;
+        document.getElementById("detections-text").textContent = detectionText;
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("เกิดข้อผิดพลาดในการประมวลผลภาพ กรุณาลองใหม่อีกครั้ง");
+    }
+});
 
     // Close any open info panel before processing new image
     closeDetectionPanel();
@@ -631,4 +657,5 @@ document.addEventListener('keydown', function(e) {
 
 
 window.closeDetectionPanel = closeDetectionPanel;
+
 
