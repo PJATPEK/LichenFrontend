@@ -2,16 +2,12 @@
 // CONFIGURATION
 // ============================================
 
-// Get API URL from input field or use default
 function getApiUrl() {
     const apiUrlInput = document.getElementById('api-url');
     let url = apiUrlInput ? apiUrlInput.value.trim() : '';
-    
-    // Remove trailing slash if present
     if (url.endsWith('/')) {
         url = url.slice(0, -1);
     }
-    
     return url || 'http://localhost:7860';
 }
 
@@ -19,42 +15,49 @@ function getApiUrl() {
 // CONNECTION TESTING
 // ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const testConnectionBtn = document.getElementById('test-connection');
     if (testConnectionBtn) {
         testConnectionBtn.addEventListener('click', testBackendConnection);
     }
-    
-    // Auto-test connection on page load
     setTimeout(testBackendConnection, 500);
+
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleImageUpload);
+    }
+
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', function () {
+            darkModeEnabled = !darkModeEnabled;
+            document.body.classList.toggle('dark-mode');
+            this.textContent = darkModeEnabled ? '☀️' : '🌙';
+        });
+    }
 });
 
 async function testBackendConnection() {
     const statusElement = document.getElementById('connection-status');
     const apiUrl = getApiUrl();
-    
+
     if (!apiUrl || apiUrl === 'http://localhost:7860') {
         statusElement.textContent = '⚠️ Please enter your Hugging Face Space URL';
         statusElement.className = 'error';
         return;
     }
-    
+
     statusElement.textContent = 'Testing...';
     statusElement.className = '';
-    
+
     try {
-        // Test if Gradio is accessible
-        const response = await fetch(`${apiUrl}/`, {
-            method: 'GET',
-            mode: 'cors'
-        });
-        
+        const response = await fetch(`${apiUrl}/`, { method: 'GET', mode: 'cors' });
         if (response.ok) {
             statusElement.textContent = '✓ Connected';
             statusElement.className = 'success';
             console.log('Backend is accessible');
         } else {
-            throw new Error(`Backend responded with status ${response.status}`);
+            throw new Error(`Status ${response.status}`);
         }
     } catch (error) {
         statusElement.textContent = '✗ Connection Failed';
@@ -64,27 +67,10 @@ async function testBackendConnection() {
 }
 
 // ============================================
-// DARK MODE
+// DARK MODE STATE
 // ============================================
 
 let darkModeEnabled = false;
-
-document.addEventListener('DOMContentLoaded', function() {
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', function() {
-            darkModeEnabled = !darkModeEnabled;
-            document.body.classList.toggle('dark-mode');
-            
-            if (darkModeEnabled) {
-                this.textContent = '☀️';
-            } else {
-                this.textContent = '🌙';
-            }
-        });
-    }
-});
 
 // ============================================
 // MAIN APPLICATION STATE
@@ -106,11 +92,11 @@ let lastMouseY = 0;
 // IMAGE UPLOAD AND PREDICTION
 // ============================================
 
-document.getElementById('upload-form').addEventListener('submit', async function(e) {
+async function handleImageUpload(e) {
     e.preventDefault();
-    
+
     const fileInput = document.getElementById('image-input');
-    if (!fileInput.files || !fileInput.files[0]) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
         alert('Please select an image file');
         return;
     }
@@ -123,91 +109,121 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
     closeDetectionPanel();
 
-    const submitButton = this.querySelector('button[type="submit"]');
+    const submitButton = document.querySelector('#upload-form button[type="submit"]');
     const originalButtonText = submitButton.textContent;
     submitButton.textContent = 'Processing...';
     submitButton.disabled = true;
 
+    const file = fileInput.files[0];
+
     try {
-        // Read image as base64
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = async function(e) {
-            try {
-                const base64Image = e.target.result;
-                
-                // For Gradio API, we need to use their specific format
-                console.log('Sending request to Gradio API:', `${apiUrl}/call/predict_api`);
-                
-                // Try the Gradio Python API client format
-                const response = await fetch(`${apiUrl}/call/predict_api`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        data: [base64Image]
-                    })
-                });
+        // Step 1: Convert image file → base64 data URL
+        const base64Image = await fileToBase64(file);
 
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
+        // Step 2: POST to Gradio's named API endpoint
+        // Gradio /call/<api_name> expects { data: [...inputs] }
+        // then you GET /call/<api_name>/<event_id> to retrieve the result.
+        // But for simple JSON outputs the /call endpoint returns the result directly.
+        const callUrl = `${apiUrl}/call/predict_api`;
+        console.log('POST →', callUrl);
 
-                const result = await response.json();
-                console.log('API Response:', result);
-                
-                // Gradio returns data in result.data array
-                if (result.data && result.data.length > 0) {
-                    const apiData = result.data[0];
-                    
-                    if (apiData.result_image_base64) {
-                        const imgElement = document.getElementById('result-image');
-                        originalImageSrc = 'data:image/jpeg;base64,' + apiData.result_image_base64;
-                        imgElement.src = originalImageSrc;
-                        
-                        currentDetections = apiData.detections || [];
-                        originalImageWithoutBboxSrc = base64Image;
-                        
-                        imgElement.onload = function() {
-                            setupImageClickHandlers(imgElement, apiData.detections || []);
-                        };
-                        
-                        document.getElementById('result-container').style.display = 'block';
-                        document.getElementById('result-container').scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start' 
-                        });
+        const postResp = await fetch(callUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: [base64Image] })
+        });
+
+        if (!postResp.ok) {
+            const txt = await postResp.text();
+            throw new Error(`POST failed (${postResp.status}): ${txt}`);
+        }
+
+        const postJson = await postResp.json();
+        console.log('POST response:', postJson);
+
+        // Step 3: Gradio returns { event_id: "..." } — poll for result
+        const eventId = postJson.event_id;
+        if (!eventId) {
+            throw new Error('No event_id returned from Gradio');
+        }
+
+        const resultUrl = `${apiUrl}/call/predict_api/${eventId}`;
+        console.log('GET →', resultUrl);
+
+        // Poll until we get the result (SSE stream — read as text)
+        const getResp = await fetch(resultUrl);
+        if (!getResp.ok) {
+            throw new Error(`GET failed (${getResp.status})`);
+        }
+
+        // Gradio streams Server-Sent Events; read the full body as text
+        const rawText = await getResp.text();
+        console.log('Raw SSE response:', rawText);
+
+        // Parse the SSE text: look for "data:" lines
+        const lines = rawText.split('\n');
+        let resultData = null;
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                try {
+                    const parsed = JSON.parse(line.slice(6));
+                    // Gradio wraps output in an array
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        resultData = parsed[0];
+                        break;
                     }
-                }
-                
-                fileInput.value = '';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
-            } finally {
-                submitButton.textContent = originalButtonText;
-                submitButton.disabled = false;
+                } catch (_) { /* keep looking */ }
             }
+        }
+
+        if (!resultData) {
+            throw new Error('Could not parse result from Gradio response');
+        }
+
+        console.log('Parsed result:', resultData);
+
+        // Step 4: Use the result
+        if (!resultData.success) {
+            throw new Error(resultData.error || 'Detection failed');
+        }
+
+        const imgElement = document.getElementById('result-image');
+        originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
+        imgElement.src = originalImageSrc;
+
+        currentDetections = resultData.detections || [];
+        originalImageWithoutBboxSrc = base64Image;
+
+        imgElement.onload = function () {
+            setupImageClickHandlers(imgElement, resultData.detections || []);
         };
-        
-        reader.onerror = function() {
-            alert('Error reading file');
-            submitButton.textContent = originalButtonText;
-            submitButton.disabled = false;
-        };
-        
-        reader.readAsDataURL(file);
-        
+
+        document.getElementById('result-container').style.display = 'block';
+        document.getElementById('result-container').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        fileInput.value = '';
+
     } catch (error) {
         console.error('Error:', error);
-        alert('เกิดข้อผิดพลาดในการประมวลผลภาพ: ' + error.message);
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled = false;
     }
-});
+}
+
+// Helper: File → base64 data URL
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
 
 // ============================================
 // IMAGE INTERACTION SETUP
@@ -215,71 +231,48 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
 function setupImageClickHandlers(imgElement, detections) {
     const imageContainer = document.getElementById('image-container');
-    
-    const existingOverlays = imageContainer.querySelectorAll('.bbox-overlay');
-    existingOverlays.forEach(overlay => overlay.remove());
-    
+
+    imageContainer.querySelectorAll('.bbox-overlay').forEach(o => o.remove());
     const existingCanvas = document.getElementById('blur-canvas');
-    if (existingCanvas) {
-        existingCanvas.remove();
-    }
-    
+    if (existingCanvas) existingCanvas.remove();
+
     if (!detections || detections.length === 0) {
         console.log('No detections to display');
         return;
     }
-    
-    // Wait for image to fully render
+
     setTimeout(() => {
-        const imgNaturalWidth = imgElement.naturalWidth;
-        const imgNaturalHeight = imgElement.naturalHeight;
-        
-        // Calculate actual displayed dimensions
-        const imgDisplayWidth = imgElement.offsetWidth;
-        const imgDisplayHeight = imgElement.offsetHeight;
-        
-        const scaleX = imgDisplayWidth / imgNaturalWidth;
-        const scaleY = imgDisplayHeight / imgNaturalHeight;
-        
-        // Calculate offset of image within container
+        const scaleX = imgElement.offsetWidth  / imgElement.naturalWidth;
+        const scaleY = imgElement.offsetHeight / imgElement.naturalHeight;
         const imgOffsetLeft = imgElement.offsetLeft;
-        const imgOffsetTop = imgElement.offsetTop;
-        
+        const imgOffsetTop  = imgElement.offsetTop;
+
         detections.forEach(detection => {
-            const bbox = detection.bbox;
+            const bbox    = detection.bbox;
             const overlay = document.createElement('div');
             overlay.className = 'bbox-overlay';
             overlay.dataset.detectionId = detection.id;
-            
-            const x1 = bbox.x1 * scaleX;
-            const y1 = bbox.y1 * scaleY;
-            const width = (bbox.x2 - bbox.x1) * scaleX;
-            const height = (bbox.y2 - bbox.y1) * scaleY;
-            
+
             overlay.style.position = 'absolute';
-            overlay.style.left = (imgOffsetLeft + x1) + 'px';
-            overlay.style.top = (imgOffsetTop + y1) + 'px';
-            overlay.style.width = width + 'px';
-            overlay.style.height = height + 'px';
-            overlay.style.cursor = 'pointer';
+            overlay.style.left     = (imgOffsetLeft + bbox.x1 * scaleX) + 'px';
+            overlay.style.top      = (imgOffsetTop  + bbox.y1 * scaleY) + 'px';
+            overlay.style.width    = ((bbox.x2 - bbox.x1) * scaleX) + 'px';
+            overlay.style.height   = ((bbox.y2 - bbox.y1) * scaleY) + 'px';
+            overlay.style.cursor   = 'pointer';
             overlay.style.transition = 'all 0.3s ease';
-            
-            overlay.addEventListener('mouseenter', function() {
-                if (activeDetectionId !== detection.id) {
+
+            overlay.addEventListener('mouseenter', function () {
+                if (activeDetectionId !== detection.id)
                     this.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
-                }
             });
-            
-            overlay.addEventListener('mouseleave', function() {
-                if (activeDetectionId !== detection.id) {
+            overlay.addEventListener('mouseleave', function () {
+                if (activeDetectionId !== detection.id)
                     this.style.backgroundColor = 'transparent';
-                }
             });
-            
-            overlay.addEventListener('click', function() {
+            overlay.addEventListener('click', function () {
                 showDetectionPanel(detection, imgElement);
             });
-            
+
             imageContainer.appendChild(overlay);
         });
     }, 100);
@@ -291,71 +284,47 @@ function setupImageClickHandlers(imgElement, detections) {
 
 function applySelectiveBlur(imgElement, bbox) {
     const imageContainer = document.getElementById('image-container');
-    
     const existingCanvas = document.getElementById('blur-canvas');
-    if (existingCanvas) {
-        existingCanvas.remove();
-    }
-    
-    // Switch to original image without bounding boxes
-    if (originalImageWithoutBboxSrc) {
-        imgElement.src = originalImageWithoutBboxSrc;
-    }
-    
-    // Wait for image to load, then apply blur
+    if (existingCanvas) existingCanvas.remove();
+
+    if (originalImageWithoutBboxSrc) imgElement.src = originalImageWithoutBboxSrc;
+
     const applyBlur = () => {
         const canvas = document.createElement('canvas');
         canvas.id = 'blur-canvas';
         const ctx = canvas.getContext('2d');
-        
-        // Get exact displayed dimensions
-        const imgNaturalWidth = imgElement.naturalWidth;
-        const imgNaturalHeight = imgElement.naturalHeight;
-        const displayWidth = imgElement.offsetWidth;
+
+        const displayWidth  = imgElement.offsetWidth;
         const displayHeight = imgElement.offsetHeight;
-        
-        // Set canvas size to match displayed image
-        canvas.width = displayWidth;
+        canvas.width  = displayWidth;
         canvas.height = displayHeight;
-        
-        // Calculate scale factors
-        const scaleX = displayWidth / imgNaturalWidth;
-        const scaleY = displayHeight / imgNaturalHeight;
-        
-        // Scale bounding box coordinates
-        const x1 = bbox.x1 * scaleX;
-        const y1 = bbox.y1 * scaleY;
-        const x2 = bbox.x2 * scaleX;
-        const y2 = bbox.y2 * scaleY;
-        
+
+        const scaleX = displayWidth  / imgElement.naturalWidth;
+        const scaleY = displayHeight / imgElement.naturalHeight;
+        const x1 = bbox.x1 * scaleX, y1 = bbox.y1 * scaleY;
+        const x2 = bbox.x2 * scaleX, y2 = bbox.y2 * scaleY;
+
         const img = new Image();
         img.src = originalImageWithoutBboxSrc || originalImageSrc;
-        img.onload = function() {
-            // Draw entire image blurred
+        img.onload = function () {
             ctx.filter = 'blur(8px)';
             ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
-            
-            // Cut out the bounding box area
             ctx.filter = 'none';
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-            
-            // Position canvas exactly over the image
-            canvas.style.position = 'absolute';
-            canvas.style.top = imgElement.offsetTop + 'px';
-            canvas.style.left = imgElement.offsetLeft + 'px';
-            canvas.style.width = displayWidth + 'px';
-            canvas.style.height = displayHeight + 'px';
+
+            canvas.style.position      = 'absolute';
+            canvas.style.top           = imgElement.offsetTop  + 'px';
+            canvas.style.left          = imgElement.offsetLeft + 'px';
+            canvas.style.width         = displayWidth  + 'px';
+            canvas.style.height        = displayHeight + 'px';
             canvas.style.pointerEvents = 'none';
-            
+
             imageContainer.appendChild(canvas);
-            
-            setTimeout(() => {
-                canvas.classList.add('active');
-            }, 10);
+            setTimeout(() => canvas.classList.add('active'), 10);
         };
     };
-    
+
     if (originalImageWithoutBboxSrc && imgElement.src !== originalImageWithoutBboxSrc) {
         imgElement.onload = applyBlur;
     } else {
@@ -370,62 +339,40 @@ function applySelectiveBlur(imgElement, bbox) {
 function showDetectionPanel(detection, imgElement) {
     activeDetectionId = detection.id;
     activeBbox = detection.bbox;
-    
-    // Check if mobile FIRST
+
     const isMobile = window.innerWidth <= 768;
-    
-    // Remove existing panel if any
     const existingPanel = document.querySelector('.info-panel');
-    if (existingPanel) {
-        existingPanel.remove();
-    }
-    
-    const imageContainer = document.getElementById('image-container');
-    imageContainer.classList.add('shifted');
-    
-    // Reset zoom and pan
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-    
+    if (existingPanel) existingPanel.remove();
+
+    document.getElementById('image-container').classList.add('shifted');
+    zoomLevel = 1; panX = 0; panY = 0;
+
     applySelectiveBlur(imgElement, detection.bbox);
-    
-    // Add zoom and pan controls
     setupZoomPanControls(imgElement);
-    
-    const allOverlays = document.querySelectorAll('.bbox-overlay');
-    allOverlays.forEach(overlay => {
-        overlay.classList.remove('active');
-        overlay.style.backgroundColor = 'transparent';
+
+    document.querySelectorAll('.bbox-overlay').forEach(o => {
+        o.classList.remove('active');
+        o.style.backgroundColor = 'transparent';
     });
     const activeOverlay = document.querySelector(`[data-detection-id="${detection.id}"]`);
-    if (activeOverlay) {
-        activeOverlay.classList.add('active');
-    }
-    
-    // Create the panel
+    if (activeOverlay) activeOverlay.classList.add('active');
+
     const panel = document.createElement('div');
     panel.className = 'info-panel';
-    
-    // CRITICAL: Force mobile styles immediately if on mobile
+
     if (isMobile) {
-        panel.style.position = 'relative';
-        panel.style.right = 'auto';
-        panel.style.left = 'auto';
-        panel.style.top = 'auto';
-        panel.style.width = '100%';
-        panel.style.maxWidth = '800px';
-        panel.style.marginTop = '20px';
-        panel.style.marginLeft = 'auto';
-        panel.style.marginRight = 'auto';
-        panel.style.boxSizing = 'border-box';
+        Object.assign(panel.style, {
+            position: 'relative', right: 'auto', left: 'auto', top: 'auto',
+            width: '100%', maxWidth: '800px', marginTop: '20px',
+            marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box'
+        });
     }
-    
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'panel-close';
     closeBtn.innerHTML = '✕';
     closeBtn.onclick = closeDetectionPanel;
-    
+
     const panelContent = document.createElement('div');
     panelContent.innerHTML = `
         <div class="panel-header">
@@ -441,73 +388,57 @@ function showDetectionPanel(detection, imgElement) {
             <div class="info-label">ความมั่นใจ</div>
             <div class="info-value">${(detection.confidence * 100).toFixed(0)}%</div>
             <div class="confidence-bar">
-                <div class="confidence-fill" style="width: ${(detection.confidence * 100).toFixed(0)}%"></div>
+                <div class="confidence-fill" style="width:${(detection.confidence * 100).toFixed(0)}%"></div>
             </div>
         </div>
         <div class="panel-info-section">
             <div class="info-label">ระดับมลพิษทางอากาศ</div>
-            <div class="air-quality-bar" style="background: ${detection.air_quality_color}"></div>
+            <div class="air-quality-bar" style="background:${detection.air_quality_color}"></div>
             <div class="info-value-large">${detection.air_quality}</div>
             <div class="info-description">${detection.air_quality_description}</div>
-        </div>
-    `;
-    
+        </div>`;
+
     panel.appendChild(closeBtn);
     panel.appendChild(panelContent);
-    
-    // Append panel to correct location
+
     if (isMobile) {
         const mainContainer = document.getElementById('main-container');
         if (mainContainer) {
             mainContainer.appendChild(panel);
             panel.style.display = 'block';
             panel.style.visibility = 'visible';
-            setTimeout(() => {
-                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 200);
+            setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
         }
     } else {
         document.body.appendChild(panel);
-        setTimeout(() => {
-            panel.classList.add('active');
-        }, 10);
+        setTimeout(() => panel.classList.add('active'), 10);
     }
-    
-    // Add zoom button listeners
+
     setTimeout(() => {
-        const zoomInBtn = document.getElementById('zoom-in');
-        const zoomOutBtn = document.getElementById('zoom-out');
-        const zoomResetBtn = document.getElementById('zoom-reset');
-        
-        if (zoomInBtn) zoomInBtn.addEventListener('click', () => zoomIn(imgElement, detection.bbox));
-        if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => zoomOut(imgElement, detection.bbox));
-        if (zoomResetBtn) zoomResetBtn.addEventListener('click', () => resetZoom(imgElement, detection.bbox));
+        const zi = document.getElementById('zoom-in');
+        const zo = document.getElementById('zoom-out');
+        const zr = document.getElementById('zoom-reset');
+        if (zi) zi.addEventListener('click', () => zoomIn(imgElement, detection.bbox));
+        if (zo) zo.addEventListener('click', () => zoomOut(imgElement, detection.bbox));
+        if (zr) zr.addEventListener('click', () => resetZoom(imgElement, detection.bbox));
     }, 50);
 }
 
 function closeDetectionPanel() {
     const isMobile = window.innerWidth <= 768;
-    
+
     const panel = document.querySelector('.info-panel');
     if (panel) {
-        if (isMobile) {
-            panel.remove();
-        } else {
-            panel.classList.remove('active');
-            setTimeout(() => {
-                panel.remove();
-            }, 400);
-        }
+        if (isMobile) { panel.remove(); }
+        else { panel.classList.remove('active'); setTimeout(() => panel.remove(), 400); }
     }
-    
+
     const blurCanvas = document.getElementById('blur-canvas');
     if (blurCanvas) {
         blurCanvas.classList.remove('active');
-        setTimeout(() => {
-            blurCanvas.remove();
-        }, isMobile ? 0 : 300);
+        setTimeout(() => blurCanvas.remove(), isMobile ? 0 : 300);
     }
-    
+
     const imgElement = document.getElementById('result-image');
     if (imgElement && originalImageSrc) {
         imgElement.src = originalImageSrc;
@@ -515,30 +446,23 @@ function closeDetectionPanel() {
         imgElement.style.transformOrigin = '';
         imgElement.style.cursor = 'default';
     }
-    
+
     const imageContainer = document.getElementById('image-container');
     if (imageContainer) {
         imageContainer.classList.remove('shifted');
         imageContainer.style.cursor = 'default';
     }
-    
-    const allOverlays = document.querySelectorAll('.bbox-overlay');
-    allOverlays.forEach(overlay => {
-        overlay.classList.remove('active');
-        overlay.style.backgroundColor = 'transparent';
+
+    document.querySelectorAll('.bbox-overlay').forEach(o => {
+        o.classList.remove('active');
+        o.style.backgroundColor = 'transparent';
     });
-    
-    if (imgElement) {
-        removeZoomPanControls(imgElement);
-    }
-    
-    activeDetectionId = null;
-    activeBbox = null;
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-    isDragging = false;
-    
+
+    if (imgElement) removeZoomPanControls(imgElement);
+
+    activeDetectionId = null; activeBbox = null;
+    zoomLevel = 1; panX = 0; panY = 0; isDragging = false;
+
     setTimeout(() => {
         if (imgElement && currentDetections && currentDetections.length > 0) {
             setupImageClickHandlers(imgElement, currentDetections);
@@ -551,12 +475,10 @@ function closeDetectionPanel() {
 // ============================================
 
 function setupZoomPanControls(imgElement) {
-    const imageContainer = document.getElementById('image-container');
-    imageContainer.style.cursor = 'grab';
-    
+    document.getElementById('image-container').style.cursor = 'grab';
     imgElement.addEventListener('mousedown', handleMouseDown);
     imgElement.addEventListener('mousemove', handleMouseMove);
-    imgElement.addEventListener('mouseup', handleMouseUp);
+    imgElement.addEventListener('mouseup',   handleMouseUp);
     imgElement.addEventListener('mouseleave', handleMouseUp);
     imgElement.addEventListener('wheel', handleWheel, { passive: false });
 }
@@ -565,137 +487,82 @@ function removeZoomPanControls(imgElement) {
     if (!imgElement) return;
     imgElement.removeEventListener('mousedown', handleMouseDown);
     imgElement.removeEventListener('mousemove', handleMouseMove);
-    imgElement.removeEventListener('mouseup', handleMouseUp);
+    imgElement.removeEventListener('mouseup',   handleMouseUp);
     imgElement.removeEventListener('mouseleave', handleMouseUp);
     imgElement.removeEventListener('wheel', handleWheel);
 }
 
 function handleMouseDown(e) {
     isDragging = true;
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-    const imageContainer = document.getElementById('image-container');
-    imageContainer.style.cursor = 'grabbing';
+    lastMouseX = e.clientX; lastMouseY = e.clientY;
+    document.getElementById('image-container').style.cursor = 'grabbing';
     e.preventDefault();
 }
 
 function handleMouseMove(e) {
     if (!isDragging) return;
-    
-    const deltaX = e.clientX - lastMouseX;
-    const deltaY = e.clientY - lastMouseY;
-    
-    panX += deltaX;
-    panY += deltaY;
-    
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-    
-    const imgElement = document.getElementById('result-image');
-    imgElement.style.transformOrigin = '0 0';
-    imgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    imgElement.style.transition = 'none';
+    panX += e.clientX - lastMouseX;
+    panY += e.clientY - lastMouseY;
+    lastMouseX = e.clientX; lastMouseY = e.clientY;
+    const img = document.getElementById('result-image');
+    img.style.transformOrigin = '0 0';
+    img.style.transform = `translate(${panX}px,${panY}px) scale(${zoomLevel})`;
+    img.style.transition = 'none';
 }
 
 function handleMouseUp() {
     isDragging = false;
-    const imageContainer = document.getElementById('image-container');
-    imageContainer.style.cursor = 'grab';
+    document.getElementById('image-container').style.cursor = 'grab';
 }
 
 function handleWheel(e) {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    const newZoom = Math.max(0.5, Math.min(3, zoomLevel + delta));
-    
-    zoomTowardsBbox(newZoom);
+    zoomTowardsBbox(Math.max(0.5, Math.min(3, zoomLevel + (e.deltaY > 0 ? -0.1 : 0.1))));
     updateZoomLevelText();
 }
 
-function zoomIn(imgElement, bbox) {
-    const newZoom = Math.min(3, zoomLevel + 0.2);
-    zoomTowardsBbox(newZoom);
-    updateZoomLevelText();
-    updateBlurCanvas(imgElement, bbox);
-}
-
-function zoomOut(imgElement, bbox) {
-    const newZoom = Math.max(0.5, zoomLevel - 0.2);
-    zoomTowardsBbox(newZoom);
-    updateZoomLevelText();
-    updateBlurCanvas(imgElement, bbox);
-}
-
-function resetZoom(imgElement, bbox) {
-    zoomLevel = 1;
-    panX = 0;
-    panY = 0;
-    updateImageTransform();
-    updateZoomLevelText();
-    updateBlurCanvas(imgElement, bbox);
-}
+function zoomIn(imgElement, bbox)  { zoomTowardsBbox(Math.min(3,   zoomLevel + 0.2)); updateZoomLevelText(); updateBlurCanvas(); }
+function zoomOut(imgElement, bbox) { zoomTowardsBbox(Math.max(0.5, zoomLevel - 0.2)); updateZoomLevelText(); updateBlurCanvas(); }
+function resetZoom() { zoomLevel = 1; panX = 0; panY = 0; updateImageTransform(); updateZoomLevelText(); updateBlurCanvas(); }
 
 function zoomTowardsBbox(newZoom) {
-    if (!activeBbox) {
-        zoomLevel = newZoom;
-        updateImageTransform();
-        return;
-    }
-    
-    const imgElement = document.getElementById('result-image');
-    const imgNaturalWidth = imgElement.naturalWidth;
-    const imgNaturalHeight = imgElement.naturalHeight;
-    const displayWidth = imgElement.offsetWidth;
-    const displayHeight = imgElement.offsetHeight;
-    
-    const scaleX = displayWidth / imgNaturalWidth;
-    const scaleY = displayHeight / imgNaturalHeight;
-    
-    const bboxCenterXNatural = (activeBbox.x1 + activeBbox.x2) / 2;
-    const bboxCenterYNatural = (activeBbox.y1 + activeBbox.y2) / 2;
-    
-    const bboxCenterXDisplayed = bboxCenterXNatural * scaleX;
-    const bboxCenterYDisplayed = bboxCenterYNatural * scaleY;
-    
-    const imageContainer = document.getElementById('image-container');
-    const containerWidth = imageContainer.offsetWidth;
-    const containerHeight = imageContainer.offsetHeight;
-    
-    const imgOffsetLeft = (containerWidth - displayWidth) / 2;
-    const imgOffsetTop = (containerHeight - displayHeight) / 2;
-    
-    const bboxAbsoluteX = imgOffsetLeft + bboxCenterXDisplayed;
-    const bboxAbsoluteY = imgOffsetTop + bboxCenterYDisplayed;
-    
-    const containerCenterX = containerWidth / 2;
-    const containerCenterY = containerHeight / 2;
-    
-    panX = (containerCenterX - bboxAbsoluteX) * newZoom;
-    panY = (containerCenterY - bboxAbsoluteY) * newZoom;
-    
+    if (!activeBbox) { zoomLevel = newZoom; updateImageTransform(); return; }
+
+    const img = document.getElementById('result-image');
+    const container = document.getElementById('image-container');
+    const scaleX = img.offsetWidth  / img.naturalWidth;
+    const scaleY = img.offsetHeight / img.naturalHeight;
+
+    const bboxCX = (activeBbox.x1 + activeBbox.x2) / 2 * scaleX;
+    const bboxCY = (activeBbox.y1 + activeBbox.y2) / 2 * scaleY;
+    const offL = (container.offsetWidth  - img.offsetWidth)  / 2;
+    const offT = (container.offsetHeight - img.offsetHeight) / 2;
+    const absX = offL + bboxCX;
+    const absY = offT + bboxCY;
+
+    panX = (container.offsetWidth  / 2 - absX) * newZoom;
+    panY = (container.offsetHeight / 2 - absY) * newZoom;
     zoomLevel = newZoom;
     updateImageTransform();
 }
 
 function updateImageTransform() {
-    const imgElement = document.getElementById('result-image');
-    imgElement.style.transformOrigin = '0 0';
-    imgElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
-    imgElement.style.transition = 'transform 0.2s ease-out';
+    const img = document.getElementById('result-image');
+    img.style.transformOrigin = '0 0';
+    img.style.transform = `translate(${panX}px,${panY}px) scale(${zoomLevel})`;
+    img.style.transition = 'transform 0.2s ease-out';
 }
 
 function updateZoomLevelText() {
-    const zoomText = document.querySelector('.zoom-level-text');
-    if (zoomText) {
-        zoomText.textContent = `${Math.round(zoomLevel * 100)}%`;
-    }
+    const el = document.querySelector('.zoom-level-text');
+    if (el) el.textContent = `${Math.round(zoomLevel * 100)}%`;
 }
 
-function updateBlurCanvas(imgElement, bbox) {
-    const blurCanvas = document.getElementById('blur-canvas');
-    if (blurCanvas) {
-        blurCanvas.style.transformOrigin = '0 0';
-        blurCanvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+function updateBlurCanvas() {
+    const canvas = document.getElementById('blur-canvas');
+    if (canvas) {
+        canvas.style.transformOrigin = '0 0';
+        canvas.style.transform = `translate(${panX}px,${panY}px) scale(${zoomLevel})`;
     }
 }
 
@@ -703,18 +570,5 @@ function updateBlurCanvas(imgElement, bbox) {
 // KEYBOARD SHORTCUTS
 // ============================================
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeDetectionPanel();
-    }
-});
-
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetectionPanel(); });
 window.closeDetectionPanel = closeDetectionPanel;
-
-
-
-
-
-
-
-
