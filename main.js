@@ -141,46 +141,28 @@ async function handleImageUpload(e) {
         const postJson = await postResp.json();
         console.log('POST response:', postJson);
 
-        // Step 3: Gradio returns { event_id: "..." } — poll for result
-        const eventId = postJson.event_id;
-        if (!eventId) {
-            throw new Error('No event_id returned from Gradio');
+        const resultData = postJson;
+
+        if (!resultData.success) {
+            throw new Error(resultData.error || 'Detection failed');
         }
-
-        const resultUrl = `${apiUrl}/call/predict_api/${eventId}`;
-        console.log('GET →', resultUrl);
-
-        // Poll until we get the result (SSE stream — read as text)
-        const getResp = await fetch(resultUrl);
-        if (!getResp.ok) {
-            throw new Error(`GET failed (${getResp.status})`);
-        }
-
-        // Gradio streams Server-Sent Events; read the full body as text
-        const rawText = await getResp.text();
-        console.log('Raw SSE response:', rawText);
-
-        // Parse the SSE text: look for "data:" lines
-        const lines = rawText.split('\n');
-        let resultData = null;
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                try {
-                    const parsed = JSON.parse(line.slice(6));
-                    // Gradio wraps output in an array
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        resultData = parsed[0];
-                        break;
-                    }
-                } catch (_) { /* keep looking */ }
-            }
-        }
-
-        if (!resultData) {
-            throw new Error('Could not parse result from Gradio response');
-        }
-
-        console.log('Parsed result:', resultData);
+        
+        const imgElement = document.getElementById('result-image');
+        originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
+        imgElement.src = originalImageSrc;
+        
+        currentDetections = resultData.detections || [];
+        originalImageWithoutBboxSrc = base64Image;
+        
+        imgElement.onload = function () {
+            setupImageClickHandlers(imgElement, currentDetections);
+        };
+        
+        document.getElementById('result-container').style.display = 'block';
+        document.getElementById('result-container').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
 
         // Step 4: Use the result
         if (!resultData.success) {
@@ -572,3 +554,4 @@ function updateBlurCanvas() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetectionPanel(); });
 window.closeDetectionPanel = closeDetectionPanel;
+
