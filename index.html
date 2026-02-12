@@ -9,14 +9,10 @@
 <body>
     <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
     <h1>Lichen Detection</h1>
-    
-    <!-- API Configuration Panel -->
-    <div class="api-config">
-        <label for="api-url">Backend API URL:</label>
-        <input type="text" id="api-url" 
-               value="https://PjetpAAAAAk-lichen-detection-api.hf.space/run/gradio_interface" 
-               placeholder="https://your-username-lichen-api.hf.space">
-        <button id="test-connection">Test Connection</button>
+
+    <!-- API config kept in DOM for JS compatibility but completely hidden -->
+    <div class="api-config" style="display:none;">
+        <input type="text" id="api-url" value="https://PjetpAAAAAk-lichen-detection-api.hf.space">
         <span id="connection-status"></span>
     </div>
 
@@ -32,9 +28,9 @@
                     <img id="result-image" alt="Result Image">
                 </div>
             </div>
-            <div id="detections-text" style="margin-top:20px; font-size:1.1em; color:#333;"></div>
         </div>
     </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
