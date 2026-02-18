@@ -42,6 +42,217 @@ body.dark-mode .panel-header {
     border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
+/* ============================================ */
+/* HELP BUTTON & MODAL */
+/* ============================================ */
+
+#help-toggle {
+    position: fixed;
+    top: 80px; /* Below dark mode toggle */
+    left: 20px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+#help-toggle:hover {
+    transform: scale(1.1);
+    background-color: #1976D2;
+}
+
+body.dark-mode #help-toggle {
+    background-color: #1976D2;
+}
+
+body.dark-mode #help-toggle:hover {
+    background-color: #1565C0;
+}
+
+/* Help Modal Overlay */
+.help-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    overflow: auto;
+    animation: fadeIn 0.3s ease;
+}
+
+.help-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Help Modal Content Box */
+.help-modal-content {
+    background-color: #ffffff;
+    margin: 20px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+body.dark-mode .help-modal-content {
+    background-color: #003366;
+    color: #ffffff;
+}
+
+/* Close Button */
+.help-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+.help-close:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+    transform: rotate(90deg);
+}
+
+body.dark-mode .help-close {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+/* Help Modal Typography */
+.help-modal-content h2 {
+    font-size: 2.2em;
+    margin: 0 0 30px 0;
+    color: #333;
+    border-bottom: 3px solid #4CAF50;
+    padding-bottom: 15px;
+}
+
+body.dark-mode .help-modal-content h2 {
+    color: #ffffff;
+    border-bottom-color: #66BB6A;
+}
+
+.help-instructions h3 {
+    font-size: 1.5em;
+    color: #2196F3;
+    margin: 30px 0 15px 0;
+    display: flex;
+    align-items: center;
+}
+
+body.dark-mode .help-instructions h3 {
+    color: #64B5F6;
+}
+
+.help-instructions p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin: 10px 0;
+    text-align: left;
+    color: #555;
+}
+
+body.dark-mode .help-instructions p {
+    color: #dddddd;
+}
+
+.help-instructions ul {
+    text-align: left;
+    margin: 15px 0;
+    padding-left: 30px;
+}
+
+.help-instructions li {
+    font-size: 1.05em;
+    line-height: 1.8;
+    margin: 8px 0;
+    color: #555;
+}
+
+body.dark-mode .help-instructions li {
+    color: #dddddd;
+}
+
+/* Help Images */
+.help-image {
+    max-width: 100%;
+    height: auto;
+    margin: 15px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid #e0e0e0;
+}
+
+body.dark-mode .help-image {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Color Box for Species Legend */
+.color-box {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 2px solid #333;
+}
+
+body.dark-mode .color-box {
+    border-color: #ffffff;
+}
+
+/* ============================================ */
+/* ORIGINAL STYLES */
+/* ============================================ */
+
 #dark-mode-toggle {
     position: fixed;
     top: 20px;
@@ -402,6 +613,27 @@ body.dark-mode .zoom-level-text {
 @media (max-width: 768px) {
     body {
         margin: 10px;
+    }
+    
+    #help-toggle {
+        top: 70px; /* Adjusted for mobile */
+        width: 45px;
+        height: 45px;
+        font-size: 22px;
+    }
+    
+    .help-modal-content {
+        padding: 30px 20px;
+        margin: 10px;
+        max-height: 90vh;
+    }
+    
+    .help-modal-content h2 {
+        font-size: 1.8em;
+    }
+    
+    .help-instructions h3 {
+        font-size: 1.3em;
     }
     
     h1 {
