@@ -37,12 +37,22 @@
     <div id="help-modal" class="help-modal">
         <div class="help-modal-content">
             <button class="help-close" aria-label="Close help">&times;</button>
-            <h2>How to Use</h2>
+            <h2 id="help-title">How to Use</h2>
+            
+            <!-- Language Toggle -->
+            <div class="language-toggle">
+                <span class="lang-label" id="lang-label-en">English</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="lang-toggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="lang-label" id="lang-label-th">ไทย</span>
+            </div>
             
             <!-- ========================================== -->
-            <!-- PUT YOUR INSTRUCTIONS HERE -->
+            <!-- ENGLISH INSTRUCTIONS -->
             <!-- ========================================== -->
-            <div class="help-instructions">
+            <div class="help-instructions" id="help-en">
                 
                 <h3>Step 1: Upload an Image</h3>
                 <p>Click the "Choose File" button to select an image of lichen from your device.</p>
@@ -85,7 +95,101 @@
                 
             </div>
             <!-- ========================================== -->
-            <!-- END OF INSTRUCTIONS -->
+            <!-- ENGLISH INSTRUCTIONS -->
+            <!-- ========================================== -->
+            <div class="help-instructions" id="help-en">
+                
+                <h3>Step 1: Upload an Image</h3>
+                <p>Click the "Choose File" button to select an image of lichen from your device.</p>
+                <img src="images/step1-en.png" alt="Choose file button" class="help-image">
+                
+                <h3>Step 2: Predict</h3>
+                <p>After selecting your image, click the green "Predict" button to start the detection.</p>
+                <img src="images/step2-en.png" alt="Predict button" class="help-image">
+                
+                <h3>Step 3: View Results</h3>
+                <p>The system will display the image with colored bounding boxes around detected lichen species.</p>
+                <img src="images/step3-en.png" alt="Results display" class="help-image">
+                
+                <h3>Step 4: Get Details</h3>
+                <p>Click on any detected lichen (bounding box area) to see detailed information including:</p>
+                <ul>
+                    <li>Species name</li>
+                    <li>Confidence level</li>
+                    <li>Air quality assessment</li>
+                </ul>
+                <img src="images/step4-en.png" alt="Info panel" class="help-image">
+                
+                <h3>Bounding Box Colors</h3>
+                <p>Each species is represented by a different color:</p>
+                <ul>
+                    <li><span class="color-box" style="background:#00c800;"></span> <strong>Green</strong> - Dirinaria picta</li>
+                    <li><span class="color-box" style="background:#00dcdc;"></span> <strong>Yellow</strong> - Nigrovothelium tropicum</li>
+                    <li><span class="color-box" style="background:#dc5000;"></span> <strong>Blue</strong> - Physcia undulata</li>
+                    <li><span class="color-box" style="background:#0000dc;"></span> <strong>Red</strong> - Pyxine cocoes</li>
+                    <li><span class="color-box" style="background:#b400b4;"></span> <strong>Purple</strong> - Trypethelium eluteriae</li>
+                </ul>
+                
+                <h3>Tips</h3>
+                <ul>
+                    <li>Use clear, well-lit photos for best results</li>
+                    <li>Photos taken from 10-30cm distance work best</li>
+                    <li>You can zoom and pan within the info panel using mouse wheel and drag</li>
+                    <li>Press ESC key to close the info panel</li>
+                </ul>
+                
+            </div>
+            <!-- ========================================== -->
+            <!-- END ENGLISH INSTRUCTIONS -->
+            <!-- ========================================== -->
+            
+            <!-- ========================================== -->
+            <!-- THAI INSTRUCTIONS -->
+            <!-- ========================================== -->
+            <div class="help-instructions" id="help-th" style="display:none;">
+                
+                <h3>ขั้นตอนที่ 1: อัปโหลดรูปภาพ</h3>
+                <p>คลิกปุ่ม "Choose File" เพื่อเลือกรูปภาพไลเคนจากอุปกรณ์ของคุณ</p>
+                <img src="images/step1-th.png" alt="ปุ่มเลือกไฟล์" class="help-image">
+                
+                <h3>ขั้นตอนที่ 2: ทำนาย</h3>
+                <p>หลังจากเลือกรูปภาพแล้ว ให้คลิกปุ่ม "Predict" สีเขียวเพื่อเริ่มการตรวจจับ</p>
+                <img src="images/step2-th.png" alt="ปุ่มทำนาย" class="help-image">
+                
+                <h3>ขั้นตอนที่ 3: ดูผลลัพธ์</h3>
+                <p>ระบบจะแสดงรูปภาพพร้อมกรอบสีรอบ ๆ ไลเคนที่ตรวจพบ</p>
+                <img src="images/step3-th.png" alt="แสดงผลลัพธ์" class="help-image">
+                
+                <h3>ขั้นตอนที่ 4: ดูรายละเอียด</h3>
+                <p>คลิกที่ไลเคนที่ตรวจพบ (บริเวณกรอบ) เพื่อดูข้อมูลรายละเอียด ได้แก่:</p>
+                <ul>
+                    <li>ชื่อสายพันธุ์</li>
+                    <li>ระดับความมั่นใจ</li>
+                    <li>การประเมินคุณภาพอากาศ</li>
+                </ul>
+                <img src="images/step4-th.png" alt="แผงข้อมูล" class="help-image">
+                
+                <h3>สีของกรอบแสดงชนิด</h3>
+                <p>แต่ละสายพันธุ์จะแสดงด้วยสีที่แตกต่างกัน:</p>
+                <ul>
+                    <li><span class="color-box" style="background:#00c800;"></span> <strong>สีเขียว</strong> - Dirinaria picta</li>
+                    <li><span class="color-box" style="background:#00dcdc;"></span> <strong>สีเหลือง</strong> - Nigrovothelium tropicum</li>
+                    <li><span class="color-box" style="background:#dc5000;"></span> <strong>สีน้ำเงิน</strong> - Physcia undulata</li>
+                    <li><span class="color-box" style="background:#0000dc;"></span> <strong>สีแดง</strong> - Pyxine cocoes</li>
+                    <li><span class="color-box" style="background:#b400b4;"></span> <strong>สีม่วง</strong> - Trypethelium eluteriae</li>
+                </ul>
+                
+                <h3>เคล็ดลับ</h3>
+                <ul>
+                    <li>ใช้ภาพถ่ายที่ชัดเจนและมีแสงสว่างเพียงพอเพื่อผลลัพธ์ที่ดีที่สุด</li>
+                    <li>ภาพถ่ายจากระยะ 10-30 ซม. จะให้ผลลัพธ์ที่ดีที่สุด</li>
+                    <li>คุณสามารถซูมและลากภาพในแผงข้อมูลโดยใช้ล้อเมาส์และการลาก</li>
+                    <li>กดปุ่ม ESC เพื่อปิดแผงข้อมูล</li>
+                </ul>
+                
+            </div>
+            <!-- ========================================== -->
+            <!-- END THAI INSTRUCTIONS -->
             <!-- ========================================== -->
             
         </div>
