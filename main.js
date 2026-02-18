@@ -31,6 +31,7 @@ let lastMouseX = 0, lastMouseY = 0;
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Dark mode toggle
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     if (darkModeToggle) {
         darkModeToggle.addEventListener('click', function () {
@@ -39,6 +40,39 @@ document.addEventListener('DOMContentLoaded', function () {
             this.textContent = darkModeEnabled ? '☀️' : '🌙';
         });
     }
+
+    // Help modal toggle
+    const helpToggle = document.getElementById('help-toggle');
+    const helpModal  = document.getElementById('help-modal');
+    const helpClose  = document.querySelector('.help-close');
+
+    if (helpToggle && helpModal) {
+        helpToggle.addEventListener('click', function() {
+            helpModal.classList.add('show');
+        });
+    }
+
+    if (helpClose && helpModal) {
+        helpClose.addEventListener('click', function() {
+            helpModal.classList.remove('show');
+        });
+    }
+
+    // Close modal when clicking outside
+    if (helpModal) {
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('show');
+            }
+        });
+    }
+
+    // Close modal with ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && helpModal && helpModal.classList.contains('show')) {
+            helpModal.classList.remove('show');
+        }
+    });
 
     const uploadForm = document.getElementById('upload-form');
     if (uploadForm) {
@@ -475,5 +509,14 @@ function updateBlurCanvas() {
 // KEYBOARD SHORTCUTS
 // ============================================
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetectionPanel(); });
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape') {
+        // Close detection panel if open
+        const panel = document.querySelector('.info-panel.active');
+        if (panel) {
+            closeDetectionPanel(); 
+        }
+    }
+});
+
 window.closeDetectionPanel = closeDetectionPanel;
