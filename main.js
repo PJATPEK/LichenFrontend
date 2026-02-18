@@ -58,6 +58,37 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Language toggle for help modal
+    const langToggle = document.getElementById('lang-toggle');
+    const helpTitle  = document.getElementById('help-title');
+    const helpEn     = document.getElementById('help-en');
+    const helpTh     = document.getElementById('help-th');
+    const langLabelEn = document.getElementById('lang-label-en');
+    const langLabelTh = document.getElementById('lang-label-th');
+
+    if (langToggle) {
+        // Set initial state
+        langLabelEn.classList.add('active');
+
+        langToggle.addEventListener('change', function() {
+            if (this.checked) {
+                // Switch to Thai
+                helpTitle.textContent = 'วิธีการใช้งาน';
+                helpEn.style.display = 'none';
+                helpTh.style.display = 'block';
+                langLabelEn.classList.remove('active');
+                langLabelTh.classList.add('active');
+            } else {
+                // Switch to English
+                helpTitle.textContent = 'How to Use';
+                helpEn.style.display = 'block';
+                helpTh.style.display = 'none';
+                langLabelEn.classList.add('active');
+                langLabelTh.classList.remove('active');
+            }
+        });
+    }
+
     // Close modal when clicking outside
     if (helpModal) {
         helpModal.addEventListener('click', function(e) {
