@@ -8,6 +8,8 @@
 </head>
 <body>
     <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
+    <button id="help-toggle" aria-label="How to use">❓</button>
+    
     <h1>Lichen Detection (Model V.d0)</h1>
 
     <!-- API config kept in DOM for JS compatibility but completely hidden -->
@@ -31,7 +33,64 @@
         </div>
     </div>
 
+    <!-- How to Use Modal -->
+    <div id="help-modal" class="help-modal">
+        <div class="help-modal-content">
+            <button class="help-close" aria-label="Close help">&times;</button>
+            <h2>How to Use</h2>
+            
+            <!-- ========================================== -->
+            <!-- PUT YOUR INSTRUCTIONS HERE -->
+            <!-- ========================================== -->
+            <div class="help-instructions">
+                
+                <h3>Step 1: Upload an Image</h3>
+                <p>Click the "Choose File" button to select an image of lichen from your device.</p>
+                <img src="images/step1.png" alt="Choose file button" class="help-image">
+                
+                <h3>Step 2: Predict</h3>
+                <p>After selecting your image, click the green "Predict" button to start the detection.</p>
+                <img src="images/step2.png" alt="Predict button" class="help-image">
+                
+                <h3>Step 3: View Results</h3>
+                <p>The system will display the image with colored bounding boxes around detected lichen species.</p>
+                <img src="images/step3.png" alt="Results display" class="help-image">
+                
+                <h3>Step 4: Get Details</h3>
+                <p>Click on any detected lichen (bounding box area) to see detailed information including:</p>
+                <ul>
+                    <li>Species name</li>
+                    <li>Confidence level</li>
+                    <li>Air quality assessment</li>
+                </ul>
+                <img src="images/step4.png" alt="Info panel" class="help-image">
+                
+                <h3>Bounding Box Colors</h3>
+                <p>Each species is represented by a different color:</p>
+                <ul>
+                    <li><span class="color-box" style="background:#00c800;"></span> <strong>Green</strong> - Dirinaria picta</li>
+                    <li><span class="color-box" style="background:#00dcdc;"></span> <strong>Yellow</strong> - Nigrovothelium tropicum</li>
+                    <li><span class="color-box" style="background:#dc5000;"></span> <strong>Blue</strong> - Physcia undulata</li>
+                    <li><span class="color-box" style="background:#0000dc;"></span> <strong>Red</strong> - Pyxine cocoes</li>
+                    <li><span class="color-box" style="background:#b400b4;"></span> <strong>Purple</strong> - Trypethelium eluteriae</li>
+                </ul>
+                
+                <h3>Tips</h3>
+                <ul>
+                    <li>Use clear, well-lit photos for best results</li>
+                    <li>Photos taken from 10-30cm distance work best</li>
+                    <li>You can zoom and pan within the info panel using mouse wheel and drag</li>
+                    <li>Press ESC key to close the info panel</li>
+                </ul>
+                
+            </div>
+            <!-- ========================================== -->
+            <!-- END OF INSTRUCTIONS -->
+            <!-- ========================================== -->
+            
+        </div>
+    </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
-
