@@ -76,6 +76,111 @@ body.dark-mode #help-toggle:hover {
     background-color: #1565C0;
 }
 
+/* ============================================ */
+/* MOBILE BOTTOM NAVIGATION */
+/* ============================================ */
+
+.mobile-bottom-nav {
+    display: none; /* Hidden on desktop */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95));
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+
+body.dark-mode .mobile-bottom-nav {
+    background: linear-gradient(to top, rgba(0, 26, 51, 0.98), rgba(0, 26, 51, 0.95));
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Show bottom nav on mobile, hide desktop help button */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+    
+    .mobile-bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+    
+    body {
+        padding-bottom: 70px; /* Space for bottom nav */
+    }
+}
+
+.nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+    transition: transform 0.3s ease;
+    filter: grayscale(100%);
+    opacity: 0.6;
+}
+
+.nav-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
+body.dark-mode .nav-label {
+    color: #aaa;
+}
+
+/* Active tab styles */
+.nav-tab.active .nav-icon {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.nav-tab.active .nav-label {
+    color: #2196F3;
+    font-weight: 600;
+}
+
+body.dark-mode .nav-tab.active .nav-label {
+    color: #64B5F6;
+}
+
+/* Active indicator bar */
+.nav-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: linear-gradient(90deg, #2196F3, #64B5F6);
+    border-radius: 0 0 3px 3px;
+}
+
+/* Tap feedback */
+.nav-tab:active {
+    transform: scale(0.95);
+}
+
 /* Help Modal Overlay */
 .help-modal {
     display: none; /* Hidden by default */
