@@ -41,7 +41,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Help modal toggle
+    // Mobile bottom navigation
+    const navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabType = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs
+            navTabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Handle tab actions
+            if (tabType === 'help') {
+                // Open help modal
+                const helpModal = document.getElementById('help-modal');
+                if (helpModal) {
+                    helpModal.classList.add('show');
+                }
+            } else if (tabType === 'home') {
+                // Close help modal if open
+                const helpModal = document.getElementById('help-modal');
+                if (helpModal && helpModal.classList.contains('show')) {
+                    helpModal.classList.remove('show');
+                }
+                // Scroll to top smoothly
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Help modal toggle (desktop button)
     const helpToggle = document.getElementById('help-toggle');
     const helpModal  = document.getElementById('help-modal');
     const helpClose  = document.querySelector('.help-close');
@@ -55,6 +86,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (helpClose && helpModal) {
         helpClose.addEventListener('click', function() {
             helpModal.classList.remove('show');
+            // Reset mobile nav to home tab when closing
+            const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
+            const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
+            if (homeTab && helpTab) {
+                homeTab.classList.add('active');
+                helpTab.classList.remove('active');
+            }
         });
     }
 
@@ -94,6 +132,13 @@ document.addEventListener('DOMContentLoaded', function () {
         helpModal.addEventListener('click', function(e) {
             if (e.target === helpModal) {
                 helpModal.classList.remove('show');
+                // Reset mobile nav to home tab
+                const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
+                const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
+                if (homeTab && helpTab) {
+                    homeTab.classList.add('active');
+                    helpTab.classList.remove('active');
+                }
             }
         });
     }
@@ -102,6 +147,13 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && helpModal && helpModal.classList.contains('show')) {
             helpModal.classList.remove('show');
+            // Reset mobile nav to home tab
+            const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
+            const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
+            if (homeTab && helpTab) {
+                homeTab.classList.add('active');
+                helpTab.classList.remove('active');
+            }
         }
     });
 
