@@ -1,83 +1,267 @@
 import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
 
-// ============================================
-// HARDCODED BACKEND — no UI input needed
-// ============================================
-
 const HF_SPACE = "PjetpAAAAAk/lichen-detection-api";
 
-// ============================================
-// DARK MODE
-// ============================================
-
 let darkModeEnabled = false;
-
-// ============================================
-// MAIN APPLICATION STATE
-// ============================================
-
-let currentDetections           = [];
-let originalImageSrc            = null;
+let currentDetections = [];
+let originalImageSrc = null;
 let originalImageWithoutBboxSrc = null;
-let activeDetectionId           = null;
-let activeBbox                  = null;
-let zoomLevel  = 1;
-let panX = 0, panY = 0;
-let isDragging = false;
-let lastMouseX = 0, lastMouseY = 0;
-
-// ============================================
-// INIT
-// ============================================
+let activeDetectionId = null;
+let activeBbox = null;
+let zoomLevel = 1, panX = 0, panY = 0;
+let isDragging = false, lastMouseX = 0, lastMouseY = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', function () {
-            darkModeEnabled = !darkModeEnabled;
-            document.body.classList.toggle('dark-mode');
-            this.textContent = darkModeEnabled ? '☀️' : '🌙';
-        });
-    }
-
-    // Mobile bottom navigation
+    // ========== NAVIGATION SYSTEM ==========
+    
+    // Mobile bottom navigation (3 tabs)
     const navTabs = document.querySelectorAll('.nav-tab');
+    const helpModal = document.getElementById('help-modal');
+    const settingsModal = document.getElementById('settings-modal');
+    
     navTabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const tabType = this.getAttribute('data-tab');
             
-            // Remove active class from all tabs
             navTabs.forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
             this.classList.add('active');
             
-            // Handle tab actions
             if (tabType === 'help') {
-                // Open help modal
-                const helpModal = document.getElementById('help-modal');
-                if (helpModal) {
-                    helpModal.classList.add('show');
-                }
+                if (helpModal) helpModal.classList.add('show');
+                if (settingsModal) settingsModal.classList.remove('show');
+            } else if (tabType === 'settings') {
+                if (settingsModal) settingsModal.classList.add('show');
+                if (helpModal) helpModal.classList.remove('show');
             } else if (tabType === 'home') {
-                // Close help modal if open
-                const helpModal = document.getElementById('help-modal');
-                if (helpModal && helpModal.classList.contains('show')) {
-                    helpModal.classList.remove('show');
-                }
-                // Scroll to top smoothly
+                if (helpModal) helpModal.classList.remove('show');
+                if (settingsModal) settingsModal.classList.remove('show');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
     });
+    
+    // Desktop sidebar navigation
+    const sidebarBtns = document.querySelectorAll('.sidebar-btn');
+    sidebarBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const page = this.getAttribute('data-page');
+            
+            sidebarBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (page === 'help') {
+                if (helpModal) helpModal.classList.add('show');
+                if (settingsModal) settingsModal.classList.remove('show');
+            } else if (page === 'settings') {
+                if (settingsModal) settingsModal.classList.add('show');
+                if (helpModal) helpModal.classList.remove('show');
+            } else if (page === 'home') {
+                if (helpModal) helpModal.classList.remove('show');
+                if (settingsModal) settingsModal.classList.remove('show');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    });
+    
+    // Modal close buttons
+    const helpClose = document.querySelector('#help-modal .help-close');
+    const settingsClose = document.querySelector('#settings-modal .help-close');
+    
+    if (helpClose) {
+        helpClose.addEventListener('click', () => {
+            helpModal.classList.remove('show');
+            resetActiveNav('home');
+        });
+    }
+    
+    if (settingsClose) {
+        settingsClose.addEventListener('click', () => {
+            settingsModal.classList.remove('show');
+            resetActiveNav('home');
+        });
+    }
+    
+    // Click outside to close
+    [helpModal, settingsModal].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                    resetActiveNav('home');
+                }
+            });
+        }
+    });
+    
+    // ESC key to close
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (helpModal && helpModal.classList.contains('show')) {
+                helpModal.classList.remove('show');
+                resetActiveNav('home');
+            }
+            if (settingsModal && settingsModal.classList.contains('show')) {
+                settingsModal.classList.remove('show');
+                resetActiveNav('home');
+            }
+        }
+    });
+    
+    function resetActiveNav(tab) {
+        navTabs.forEach(t => t.classList.remove('active'));
+        sidebarBtns.forEach(b => b.classList.remove('active'));
+        
+        const activeNavTab = document.querySelector(`.nav-tab[data-tab="${tab}"]`);
+        const activeSidebarBtn = document.querySelector(`.sidebar-btn[data-page="${tab}"]`);
+        
+        if (activeNavTab) activeNavTab.classList.add('active');
+        if (activeSidebarBtn) activeSidebarBtn.classList.add('active');
+    }
+    
+    // ========== THEME SWITCHER ==========
+    
+    const themeToggleInput = document.getElementById('theme-toggle-input');
+    const themeLightOption = document.getElementById('theme-light');
+    const themeDarkOption = document.getElementById('theme-dark');
+    
+    function updateThemeUI() {
+        if (darkModeEnabled) {
+            themeToggleInput.checked = true;
+            themeLightOption.classList.remove('active');
+            themeDarkOption.classList.add('active');
+        } else {
+            themeToggleInput.checked = false;
+            themeLightOption.classList.add('active');
+            themeDarkOption.classList.remove('active');
+        }
+    }
+    
+    function toggleDarkMode() {
+        darkModeEnabled = !darkModeEnabled;
+        document.body.classList.toggle('dark-mode');
+        updateThemeUI();
+    }
+    
+    if (themeToggleInput) {
+        updateThemeUI(); // Init
+        
+        themeToggleInput.addEventListener('change', toggleDarkMode);
+        
+        themeLightOption.addEventListener('click', () => {
+            if (darkModeEnabled) toggleDarkMode();
+        });
+        
+        themeDarkOption.addEventListener('click', () => {
+            if (!darkModeEnabled) toggleDarkMode();
+        });
+    }
+    
+    // ========== HELP MODAL LANGUAGE TOGGLE ==========
+    
+    const langToggle = document.getElementById('lang-toggle');
+    const helpTitle = document.getElementById('help-title');
+    const helpEn = document.getElementById('help-en');
+    const helpTh = document.getElementById('help-th');
+    const langLabelEn = document.getElementById('lang-label-en');
+    const langLabelTh = document.getElementById('lang-label-th');
+    
+    if (langToggle) {
+        langLabelEn.classList.add('active');
+        
+        langToggle.addEventListener('change', function() {
+            if (this.checked) {
+                helpTitle.textContent = 'วิธีการใช้งาน';
+                helpEn.style.display = 'none';
+                helpTh.style.display = 'block';
+                langLabelEn.classList.remove('active');
+                langLabelTh.classList.add('active');
+            } else {
+                helpTitle.textContent = 'How to Use';
+                helpEn.style.display = 'block';
+                helpTh.style.display = 'none';
+                langLabelEn.classList.add('active');
+                langLabelTh.classList.remove('active');
+            }
+        });
+    }
+    
+    // ========== FILE UPLOAD ==========
+    
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleImageUpload);
+    }
+});
 
-    // Help modal toggle (desktop button)
-    const helpToggle = document.getElementById('help-toggle');
-    const helpModal  = document.getElementById('help-modal');
-    const helpClose  = document.querySelector('.help-close');
+// [CONTINUE WITH REST OF ORIGINAL FUNCTIONS]
+async function handleImageUpload(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('image-input');
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        alert('Please select an image file');
+        return;
+    }
+    
+    closeDetectionPanel();
+    
+    const submitButton = document.querySelector('#upload-form button[type="submit"]');
+    const originalButtonText = submitButton.textContent;
+    submitButton.textContent = 'Processing...';
+    submitButton.disabled = true;
+    
+    const file = fileInput.files[0];
+    originalImageWithoutBboxSrc = await fileToBase64(file);
+    
+    try {
+        const client = await Client.connect(HF_SPACE);
+        const result = await client.predict("/predict_api", { image: file });
+        
+        console.log("Gradio result:", result);
+        
+        const resultData = result.data[0];
+        
+        if (!resultData || !resultData.success) {
+            throw new Error(resultData?.error || "Detection failed");
+        }
+        
+        const imgElement = document.getElementById('result-image');
+        originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
+        imgElement.src = originalImageSrc;
+        
+        currentDetections = resultData.detections || [];
+        
+        imgElement.onload = function() {
+            setupImageClickHandlers(imgElement, currentDetections);
+        };
+        
+        document.getElementById('result-container').style.display = 'block';
+        document.getElementById('result-container').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+        
+        fileInput.value = '';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
+        submitButton.textContent = originalButtonText;
+        submitButton.disabled = false;
+    }
+}
 
-    if (helpToggle && helpModal) {
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// [REST OF THE ORIGINAL main.js FUNCTIONS - setupImageClickHandlers, applySelectiveBlur, etc.]
         helpToggle.addEventListener('click', function() {
             helpModal.classList.add('show');
         });
@@ -86,13 +270,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (helpClose && helpModal) {
         helpClose.addEventListener('click', function() {
             helpModal.classList.remove('show');
-            // Reset mobile nav to home tab when closing
-            const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
-            const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
-            if (homeTab && helpTab) {
-                homeTab.classList.add('active');
-                helpTab.classList.remove('active');
-            }
         });
     }
 
@@ -132,13 +309,6 @@ document.addEventListener('DOMContentLoaded', function () {
         helpModal.addEventListener('click', function(e) {
             if (e.target === helpModal) {
                 helpModal.classList.remove('show');
-                // Reset mobile nav to home tab
-                const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
-                const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
-                if (homeTab && helpTab) {
-                    homeTab.classList.add('active');
-                    helpTab.classList.remove('active');
-                }
             }
         });
     }
@@ -147,13 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && helpModal && helpModal.classList.contains('show')) {
             helpModal.classList.remove('show');
-            // Reset mobile nav to home tab
-            const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
-            const helpTab = document.querySelector('.nav-tab[data-tab="help"]');
-            if (homeTab && helpTab) {
-                homeTab.classList.add('active');
-                helpTab.classList.remove('active');
-            }
         }
     });
 
