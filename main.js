@@ -8,29 +8,45 @@ let originalImageSrc = null;
 let originalImageWithoutBboxSrc = null;
 let activeDetectionId = null;
 let activeBbox = null;
-let zoomLevel = 1, panX = 0, panY = 0;
-let isDragging = false, lastMouseX = 0, lastMouseY = 0;
+let zoomLevel = 1;
+let panX = 0, panY = 0;
+let isDragging = false;
+let lastMouseX = 0, lastMouseY = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
-    // ========== NAVIGATION SYSTEM ==========
     
-    // Mobile bottom navigation (3 tabs)
-    const navTabs = document.querySelectorAll('.nav-tab');
+    // ============================================
+    // NAVIGATION SYSTEM
+    // ============================================
+    
     const helpModal = document.getElementById('help-modal');
     const settingsModal = document.getElementById('settings-modal');
     
+    // Mobile bottom navigation (3 tabs)
+    const navTabs = document.querySelectorAll('.nav-tab');
     navTabs.forEach(tab => {
         tab.addEventListener('click', function() {
             const tabType = this.getAttribute('data-tab');
             
+            console.log('Mobile tab clicked:', tabType);
+            
+            // Remove active from all tabs
             navTabs.forEach(t => t.classList.remove('active'));
+            // Add active to clicked tab
             this.classList.add('active');
             
+            // Handle modal display
             if (tabType === 'help') {
-                if (helpModal) helpModal.classList.add('show');
+                if (helpModal) {
+                    helpModal.classList.add('show');
+                    console.log('Help modal opened');
+                }
                 if (settingsModal) settingsModal.classList.remove('show');
             } else if (tabType === 'settings') {
-                if (settingsModal) settingsModal.classList.add('show');
+                if (settingsModal) {
+                    settingsModal.classList.add('show');
+                    console.log('Settings modal opened');
+                }
                 if (helpModal) helpModal.classList.remove('show');
             } else if (tabType === 'home') {
                 if (helpModal) helpModal.classList.remove('show');
@@ -46,14 +62,25 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function() {
             const page = this.getAttribute('data-page');
             
+            console.log('Sidebar button clicked:', page);
+            
+            // Remove active from all buttons
             sidebarBtns.forEach(b => b.classList.remove('active'));
+            // Add active to clicked button
             this.classList.add('active');
             
+            // Handle modal display
             if (page === 'help') {
-                if (helpModal) helpModal.classList.add('show');
+                if (helpModal) {
+                    helpModal.classList.add('show');
+                    console.log('Help modal opened');
+                }
                 if (settingsModal) settingsModal.classList.remove('show');
             } else if (page === 'settings') {
-                if (settingsModal) settingsModal.classList.add('show');
+                if (settingsModal) {
+                    settingsModal.classList.add('show');
+                    console.log('Settings modal opened');
+                }
                 if (helpModal) helpModal.classList.remove('show');
             } else if (page === 'home') {
                 if (helpModal) helpModal.classList.remove('show');
@@ -63,37 +90,63 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
     
-    // Modal close buttons
-    const helpClose = document.querySelector('#help-modal .help-close');
-    const settingsClose = document.querySelector('#settings-modal .help-close');
+    // Helper function to reset navigation to home
+    function resetActiveNav(tab = 'home') {
+        navTabs.forEach(t => {
+            if (t.getAttribute('data-tab') === tab) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
+        });
+        
+        sidebarBtns.forEach(b => {
+            if (b.getAttribute('data-page') === tab) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+    }
     
-    if (helpClose) {
-        helpClose.addEventListener('click', () => {
+    // Modal close buttons
+    const helpCloseBtn = helpModal ? helpModal.querySelector('.help-close') : null;
+    const settingsCloseBtn = settingsModal ? settingsModal.querySelector('.help-close') : null;
+    
+    if (helpCloseBtn) {
+        helpCloseBtn.addEventListener('click', function() {
             helpModal.classList.remove('show');
             resetActiveNav('home');
         });
     }
     
-    if (settingsClose) {
-        settingsClose.addEventListener('click', () => {
+    if (settingsCloseBtn) {
+        settingsCloseBtn.addEventListener('click', function() {
             settingsModal.classList.remove('show');
             resetActiveNav('home');
         });
     }
     
-    // Click outside to close
-    [helpModal, settingsModal].forEach(modal => {
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.classList.remove('show');
-                    resetActiveNav('home');
-                }
-            });
-        }
-    });
+    // Click outside modal to close
+    if (helpModal) {
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('show');
+                resetActiveNav('home');
+            }
+        });
+    }
     
-    // ESC key to close
+    if (settingsModal) {
+        settingsModal.addEventListener('click', function(e) {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('show');
+                resetActiveNav('home');
+            }
+        });
+    }
+    
+    // ESC key to close modals
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             if (helpModal && helpModal.classList.contains('show')) {
@@ -107,18 +160,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     
-    function resetActiveNav(tab) {
-        navTabs.forEach(t => t.classList.remove('active'));
-        sidebarBtns.forEach(b => b.classList.remove('active'));
-        
-        const activeNavTab = document.querySelector(`.nav-tab[data-tab="${tab}"]`);
-        const activeSidebarBtn = document.querySelector(`.sidebar-btn[data-page="${tab}"]`);
-        
-        if (activeNavTab) activeNavTab.classList.add('active');
-        if (activeSidebarBtn) activeSidebarBtn.classList.add('active');
-    }
-    
-    // ========== THEME SWITCHER ==========
+    // ============================================
+    // THEME SWITCHER IN SETTINGS
+    // ============================================
     
     const themeToggleInput = document.getElementById('theme-toggle-input');
     const themeLightOption = document.getElementById('theme-light');
@@ -126,13 +170,13 @@ document.addEventListener('DOMContentLoaded', function () {
     
     function updateThemeUI() {
         if (darkModeEnabled) {
-            themeToggleInput.checked = true;
-            themeLightOption.classList.remove('active');
-            themeDarkOption.classList.add('active');
+            if (themeToggleInput) themeToggleInput.checked = true;
+            if (themeLightOption) themeLightOption.classList.remove('active');
+            if (themeDarkOption) themeDarkOption.classList.add('active');
         } else {
-            themeToggleInput.checked = false;
-            themeLightOption.classList.add('active');
-            themeDarkOption.classList.remove('active');
+            if (themeToggleInput) themeToggleInput.checked = false;
+            if (themeLightOption) themeLightOption.classList.add('active');
+            if (themeDarkOption) themeDarkOption.classList.remove('active');
         }
     }
     
@@ -142,21 +186,30 @@ document.addEventListener('DOMContentLoaded', function () {
         updateThemeUI();
     }
     
+    // Initialize theme UI
+    updateThemeUI();
+    
+    // Theme toggle switch
     if (themeToggleInput) {
-        updateThemeUI(); // Init
-        
         themeToggleInput.addEventListener('change', toggleDarkMode);
-        
-        themeLightOption.addEventListener('click', () => {
+    }
+    
+    // Click on theme options
+    if (themeLightOption) {
+        themeLightOption.addEventListener('click', function() {
             if (darkModeEnabled) toggleDarkMode();
         });
-        
-        themeDarkOption.addEventListener('click', () => {
+    }
+    
+    if (themeDarkOption) {
+        themeDarkOption.addEventListener('click', function() {
             if (!darkModeEnabled) toggleDarkMode();
         });
     }
     
-    // ========== HELP MODAL LANGUAGE TOGGLE ==========
+    // ============================================
+    // HELP MODAL LANGUAGE TOGGLE
+    // ============================================
     
     const langToggle = document.getElementById('lang-toggle');
     const helpTitle = document.getElementById('help-title');
@@ -166,160 +219,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const langLabelTh = document.getElementById('lang-label-th');
     
     if (langToggle) {
-        langLabelEn.classList.add('active');
-        
-        langToggle.addEventListener('change', function() {
-            if (this.checked) {
-                helpTitle.textContent = 'วิธีการใช้งาน';
-                helpEn.style.display = 'none';
-                helpTh.style.display = 'block';
-                langLabelEn.classList.remove('active');
-                langLabelTh.classList.add('active');
-            } else {
-                helpTitle.textContent = 'How to Use';
-                helpEn.style.display = 'block';
-                helpTh.style.display = 'none';
-                langLabelEn.classList.add('active');
-                langLabelTh.classList.remove('active');
-            }
-        });
-    }
-    
-    // ========== FILE UPLOAD ==========
-    
-    const uploadForm = document.getElementById('upload-form');
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', handleImageUpload);
-    }
-});
-
-// [CONTINUE WITH REST OF ORIGINAL FUNCTIONS]
-async function handleImageUpload(e) {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('image-input');
-    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-        alert('Please select an image file');
-        return;
-    }
-    
-    closeDetectionPanel();
-    
-    const submitButton = document.querySelector('#upload-form button[type="submit"]');
-    const originalButtonText = submitButton.textContent;
-    submitButton.textContent = 'Processing...';
-    submitButton.disabled = true;
-    
-    const file = fileInput.files[0];
-    originalImageWithoutBboxSrc = await fileToBase64(file);
-    
-    try {
-        const client = await Client.connect(HF_SPACE);
-        const result = await client.predict("/predict_api", { image: file });
-        
-        console.log("Gradio result:", result);
-        
-        const resultData = result.data[0];
-        
-        if (!resultData || !resultData.success) {
-            throw new Error(resultData?.error || "Detection failed");
-        }
-        
-        const imgElement = document.getElementById('result-image');
-        originalImageSrc = 'data:image/jpeg;base64,' + resultData.result_image_base64;
-        imgElement.src = originalImageSrc;
-        
-        currentDetections = resultData.detections || [];
-        
-        imgElement.onload = function() {
-            setupImageClickHandlers(imgElement, currentDetections);
-        };
-        
-        document.getElementById('result-container').style.display = 'block';
-        document.getElementById('result-container').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-        
-        fileInput.value = '';
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('เกิดข้อผิดพลาด: ' + error.message);
-    } finally {
-        submitButton.textContent = originalButtonText;
-        submitButton.disabled = false;
-    }
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// [REST OF THE ORIGINAL main.js FUNCTIONS - setupImageClickHandlers, applySelectiveBlur, etc.]
-        helpToggle.addEventListener('click', function() {
-            helpModal.classList.add('show');
-        });
-    }
-
-    if (helpClose && helpModal) {
-        helpClose.addEventListener('click', function() {
-            helpModal.classList.remove('show');
-        });
-    }
-
-    // Language toggle for help modal
-    const langToggle = document.getElementById('lang-toggle');
-    const helpTitle  = document.getElementById('help-title');
-    const helpEn     = document.getElementById('help-en');
-    const helpTh     = document.getElementById('help-th');
-    const langLabelEn = document.getElementById('lang-label-en');
-    const langLabelTh = document.getElementById('lang-label-th');
-
-    if (langToggle) {
         // Set initial state
-        langLabelEn.classList.add('active');
-
+        if (langLabelEn) langLabelEn.classList.add('active');
+        
         langToggle.addEventListener('change', function() {
             if (this.checked) {
                 // Switch to Thai
-                helpTitle.textContent = 'วิธีการใช้งาน';
-                helpEn.style.display = 'none';
-                helpTh.style.display = 'block';
-                langLabelEn.classList.remove('active');
-                langLabelTh.classList.add('active');
+                if (helpTitle) helpTitle.textContent = 'วิธีการใช้งาน';
+                if (helpEn) helpEn.style.display = 'none';
+                if (helpTh) helpTh.style.display = 'block';
+                if (langLabelEn) langLabelEn.classList.remove('active');
+                if (langLabelTh) langLabelTh.classList.add('active');
             } else {
                 // Switch to English
-                helpTitle.textContent = 'How to Use';
-                helpEn.style.display = 'block';
-                helpTh.style.display = 'none';
-                langLabelEn.classList.add('active');
-                langLabelTh.classList.remove('active');
+                if (helpTitle) helpTitle.textContent = 'How to Use';
+                if (helpEn) helpEn.style.display = 'block';
+                if (helpTh) helpTh.style.display = 'none';
+                if (langLabelEn) langLabelEn.classList.add('active');
+                if (langLabelTh) langLabelTh.classList.remove('active');
             }
         });
     }
-
-    // Close modal when clicking outside
-    if (helpModal) {
-        helpModal.addEventListener('click', function(e) {
-            if (e.target === helpModal) {
-                helpModal.classList.remove('show');
-            }
-        });
-    }
-
-    // Close modal with ESC key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && helpModal && helpModal.classList.contains('show')) {
-            helpModal.classList.remove('show');
-        }
-    });
-
+    
+    // ============================================
+    // IMAGE UPLOAD FORM
+    // ============================================
+    
     const uploadForm = document.getElementById('upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', handleImageUpload);
@@ -344,7 +269,7 @@ async function handleImageUpload(e) {
     const submitButton = document.querySelector('#upload-form button[type="submit"]');
     const originalButtonText = submitButton.textContent;
     submitButton.textContent = 'Processing...';
-    submitButton.disabled    = true;
+    submitButton.disabled = true;
 
     const file = fileInput.files[0];
 
@@ -750,19 +675,5 @@ function updateBlurCanvas() {
         canvas.style.transform       = `translate(${panX}px,${panY}px) scale(${zoomLevel})`;
     }
 }
-
-// ============================================
-// KEYBOARD SHORTCUTS
-// ============================================
-
-document.addEventListener('keydown', e => { 
-    if (e.key === 'Escape') {
-        // Close detection panel if open
-        const panel = document.querySelector('.info-panel.active');
-        if (panel) {
-            closeDetectionPanel(); 
-        }
-    }
-});
 
 window.closeDetectionPanel = closeDetectionPanel;
