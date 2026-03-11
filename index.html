@@ -8,9 +8,21 @@
 </head>
 <body>
     <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
-    <button id="help-toggle" aria-label="How to use">❓</button>
+    <button id="help-toggle" class="desktop-only" aria-label="How to use">❓</button>
     
-    <h1>Lichen Detection (Model V.z1)</h1>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <button class="nav-tab active" data-tab="home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-tab" data-tab="help">
+            <span class="nav-icon">❓</span>
+            <span class="nav-label">How to Use</span>
+        </button>
+    </nav>
+    
+    <h1>Lichen Detection (Model V.d0)</h1>
 
     <!-- API config kept in DOM for JS compatibility but completely hidden -->
     <div class="api-config" style="display:none;">
@@ -137,5 +149,3 @@
     <script type="module" src="main.js"></script>
 </body>
 </html>
-
-
