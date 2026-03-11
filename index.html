@@ -7,21 +7,47 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button id="dark-mode-toggle" aria-label="Toggle dark mode">🌙</button>
+    <button id="dark-mode-toggle" class="desktop-only" aria-label="Toggle dark mode">🌙</button>
     <button id="help-toggle" class="desktop-only" aria-label="How to use">❓</button>
+    
+    <!-- Desktop Left Sidebar -->
+    <aside class="desktop-sidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="sidebar-btn active" data-page="home">
+                <span class="sidebar-icon">🏠</span>
+                <span class="sidebar-label">Home</span>
+            </button>
+            <button class="sidebar-btn" data-page="help">
+                <span class="sidebar-icon">❓</span>
+                <span class="sidebar-label">How to Use</span>
+            </button>
+            <button class="sidebar-btn" data-page="settings">
+                <span class="sidebar-icon">⚙️</span>
+                <span class="sidebar-label">Settings</span>
+            </button>
+        </nav>
+    </aside>
     
     <!-- Mobile Bottom Navigation -->
     <nav class="mobile-bottom-nav">
-        <button class="nav-tab active" data-tab="home">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-label">Home</span>
-        </button>
-        <button class="nav-tab" data-tab="help">
+        <button class="nav-tab" data-tab="help" style="flex: 4;">
             <span class="nav-icon">❓</span>
             <span class="nav-label">How to Use</span>
         </button>
+        <button class="nav-tab active" data-tab="home" style="flex: 7;">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-tab" data-tab="settings" style="flex: 4;">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+        </button>
     </nav>
     
+    <div class="main-content">
     <h1>Lichen Detection (Model V.d0)</h1>
 
     <!-- API config kept in DOM for JS compatibility but completely hidden -->
@@ -44,6 +70,8 @@
             </div>
         </div>
     </div>
+    
+    </div> <!-- End main-content -->
 
     <!-- How to Use Modal -->
     <div id="help-modal" class="help-modal">
@@ -142,6 +170,37 @@
             <!-- ========================================== -->
             <!-- END THAI INSTRUCTIONS -->
             <!-- ========================================== -->
+            
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="help-modal">
+        <div class="help-modal-content settings-modal-content">
+            <button class="help-close" aria-label="Close settings">&times;</button>
+            <h2>Settings</h2>
+            
+            <div class="settings-section">
+                <h3>Theme</h3>
+                <p class="settings-description">Switch between light and dark mode</p>
+                
+                <div class="theme-switcher">
+                    <div class="theme-option" id="theme-light">
+                        <span class="theme-icon">☀️</span>
+                        <span class="theme-label">Light Mode</span>
+                    </div>
+                    
+                    <label class="theme-toggle-switch">
+                        <input type="checkbox" id="theme-toggle-input">
+                        <span class="theme-toggle-slider"></span>
+                    </label>
+                    
+                    <div class="theme-option" id="theme-dark">
+                        <span class="theme-icon">🌙</span>
+                        <span class="theme-label">Dark Mode</span>
+                    </div>
+                </div>
+            </div>
             
         </div>
     </div>
