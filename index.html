@@ -48,18 +48,18 @@
     </nav>
     
     <div class="main-content">
-    <h1>Lichen Detection (Version d.0)</h1>
+        <h1>Lichen Detection (Model V.d0)</h1>
 
-    <!-- API config kept in DOM for JS compatibility but completely hidden -->
-    <div class="api-config" style="display:none;">
-        <input type="text" id="api-url" value="https://PjetpAAAAAk-lichen-detection-api.hf.space">
-        <span id="connection-status"></span>
-    </div>
+        <!-- API config kept in DOM for JS compatibility but completely hidden -->
+        <div class="api-config" style="display:none;">
+            <input type="text" id="api-url" value="https://PjetpAAAAAk-lichen-detection-api.hf.space">
+            <span id="connection-status"></span>
+        </div>
 
-    <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" id="image-input" accept="image/*" required>
-        <button type="submit">Predict</button>
-    </form>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" id="image-input" accept="image/*" required>
+            <button type="submit">Predict</button>
+        </form>
 
     <div id="result-container" style="display: none">
         <div class="result">
