@@ -448,6 +448,9 @@ function showDetectionPanel(detection, imgElement) {
     const existingPanel = document.querySelector('.info-panel');
     if (existingPanel) existingPanel.remove();
 
+    // Add class to body to trigger main-content shift
+    document.body.classList.add('info-panel-active');
+    
     document.getElementById('image-container').classList.add('shifted');
     zoomLevel = 1; panX = 0; panY = 0;
 
@@ -538,6 +541,9 @@ function showDetectionPanel(detection, imgElement) {
 function closeDetectionPanel() {
     const isMobile = window.innerWidth <= 768;
 
+    // Remove body class
+    document.body.classList.remove('info-panel-active');
+    
     const panel = document.querySelector('.info-panel');
     if (panel) {
         if (isMobile) { panel.remove(); }
