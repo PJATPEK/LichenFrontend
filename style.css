@@ -461,9 +461,7 @@ button[type="submit"]:disabled {
     overflow: hidden;
 }
 
-#image-container.shifted {
-    transform: translateX(-200px);
-}
+/* Image container shift removed - main-content handles the shift on desktop */
 
 .result img {
     max-width: 800px;
@@ -757,10 +755,6 @@ body.dark-mode .zoom-level-text {
         width: 100%;
         margin-left: 0;
         margin-top: 20px;
-    }
-
-    #image-container.shifted {
-        transform: translateX(0);
     }
     
     .info-panel {
