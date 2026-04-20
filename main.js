@@ -277,11 +277,8 @@ async function handleImageUpload(e) {
     originalImageWithoutBboxSrc = await fileToBase64(file);
 
     try {
-        const client = await Client.connect(HF_SPACE);
-
-        const result = await client.predict("/predict_api", {
-            image: file
-        });
+        // Try to connect with retries for cold start
+        const result = await connectAndPredictWithRetry(file, submitButton);
 
         console.log("Gradio result:", result);
 
@@ -311,10 +308,46 @@ async function handleImageUpload(e) {
 
     } catch (error) {
         console.error('Error:', error);
-        alert('เกิดข้อผิดพลาด: ' + error.message);
+        alert('เกิดข้อผิดพลาด: ' + error.message + '\n\nPlease try again.');
     } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled    = false;
+    }
+}
+
+// Helper function to retry connection for cold start
+async function connectAndPredictWithRetry(file, submitButton, maxRetries = 3, retryDelay = 5000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            if (attempt > 1) {
+                submitButton.textContent = `Waking up server... (Attempt ${attempt}/${maxRetries})`;
+                console.log(`Retry attempt ${attempt}/${maxRetries} after ${retryDelay}ms delay`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+            
+            submitButton.textContent = attempt === 1 ? 'Connecting to server...' : `Reconnecting (${attempt}/${maxRetries})...`;
+            
+            const client = await Client.connect(HF_SPACE, {
+                timeout: 60000 // 60 second timeout for cold start
+            });
+            
+            submitButton.textContent = 'Processing image...';
+            
+            const result = await client.predict("/predict_api", {
+                image: file
+            });
+            
+            return result; // Success!
+            
+        } catch (error) {
+            console.error(`Attempt ${attempt} failed:`, error);
+            
+            if (attempt === maxRetries) {
+                throw new Error(`Connection failed after ${maxRetries} attempts. The server may be starting up - please wait 30 seconds and try again.`);
+            }
+            
+            // Continue to next retry
+        }
     }
 }
 
