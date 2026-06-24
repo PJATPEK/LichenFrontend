@@ -1,4 +1,4 @@
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.13.1/dist/index.min.js";
 
 const HF_SPACE = "PjetpAAAAAk/lichen-detection-api";
 
