@@ -1,6 +1,10 @@
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.13.1/dist/index.min.js";
-
-const HF_SPACE = "PjetpAAAAAk/lichen-detection-api";
+// NOTE: We no longer use the @gradio/client SDK. It always sends
+// `credentials: "include"` on its requests, which is incompatible with
+// Hugging Face Spaces' wildcard CORS policy (`Access-Control-Allow-Origin: *`
+// cannot be combined with `Access-Control-Allow-Credentials: true`).
+// Calling the REST endpoints directly with plain fetch + credentials:"omit"
+// avoids that mismatch entirely.
+const HF_SPACE_URL = "https://pjetpaaaaak-lichen-detection-api.hf.space";
 
 let darkModeEnabled = false;
 let currentDetections = [];
@@ -315,7 +319,91 @@ async function handleImageUpload(e) {
     }
 }
 
-// Helper function to retry connection for cold start
+// Step 1: upload the file to the Space's /gradio_api/upload endpoint.
+// Returns the server-side path Gradio assigned to the uploaded file.
+async function uploadFileToSpace(file) {
+    const formData = new FormData();
+    formData.append("files", file);
+
+    const res = await fetch(`${HF_SPACE_URL}/gradio_api/upload`, {
+        method: "POST",
+        body: formData,
+        credentials: "omit" // <-- key fix: no cookies sent, so the browser
+                             //     doesn't require Access-Control-Allow-Credentials
+    });
+
+    if (!res.ok) {
+        throw new Error(`Upload failed with status ${res.status}`);
+    }
+
+    const paths = await res.json(); // e.g. ["/tmp/gradio/xxxx/photo.jpg"]
+    if (!paths || !paths[0]) {
+        throw new Error("Upload succeeded but returned no file path");
+    }
+    return paths[0];
+}
+
+// Step 2: call the predict_api endpoint with a reference to the uploaded file.
+// This kicks off the job and returns an event_id we use to stream the result.
+async function startPrediction(uploadedPath) {
+    const res = await fetch(`${HF_SPACE_URL}/gradio_api/call/predict_api`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "omit",
+        body: JSON.stringify({
+            data: [
+                {
+                    path: uploadedPath,
+                    meta: { _type: "gradio.FileData" }
+                }
+            ]
+        })
+    });
+
+    if (!res.ok) {
+        throw new Error(`Prediction request failed with status ${res.status}`);
+    }
+
+    const { event_id } = await res.json();
+    if (!event_id) {
+        throw new Error("Server did not return an event_id");
+    }
+    return event_id;
+}
+
+// Step 3: listen on the SSE stream for the result. EventSource defaults to
+// withCredentials:false, which is equivalent to credentials:"omit" — so this
+// avoids the CORS/credentials mismatch too.
+function streamPredictionResult(eventId) {
+    return new Promise((resolve, reject) => {
+        const es = new EventSource(`${HF_SPACE_URL}/gradio_api/call/predict_api/${eventId}`);
+
+        es.addEventListener("complete", (event) => {
+            es.close();
+            try {
+                const payload = JSON.parse(event.data); // [resultObject]
+                resolve(payload);
+            } catch (err) {
+                reject(new Error("Failed to parse prediction result"));
+            }
+        });
+
+        es.addEventListener("error", (event) => {
+            es.close();
+            reject(new Error(event.data || "Prediction stream failed"));
+        });
+
+        // Safety net in case the connection itself drops without an explicit
+        // "error" event from the server (e.g. network failure).
+        es.onerror = () => {
+            es.close();
+            reject(new Error("Connection to prediction stream was lost"));
+        };
+    });
+}
+
+// Helper function to retry the whole upload -> predict -> stream flow,
+// to ride out a Space cold start.
 async function connectAndPredictWithRetry(file, submitButton, maxRetries = 3, retryDelay = 5000) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -324,28 +412,23 @@ async function connectAndPredictWithRetry(file, submitButton, maxRetries = 3, re
                 console.log(`Retry attempt ${attempt}/${maxRetries} after ${retryDelay}ms delay`);
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
-            
-            submitButton.textContent = attempt === 1 ? 'Connecting to server...' : `Reconnecting (${attempt}/${maxRetries})...`;
-            
-            const client = await Client.connect(HF_SPACE, {
-                timeout: 60000 // 60 second timeout for cold start
-            });
-            
+
+            submitButton.textContent = attempt === 1 ? 'Uploading image...' : `Reconnecting (${attempt}/${maxRetries})...`;
+            const uploadedPath = await uploadFileToSpace(file);
+
             submitButton.textContent = 'Processing image...';
-            
-            const result = await client.predict("/predict_api", {
-                image: file
-            });
-            
-            return result; // Success!
-            
+            const eventId = await startPrediction(uploadedPath);
+            const payload = await streamPredictionResult(eventId);
+
+            return { data: payload }; // keep the same shape handleImageUpload expects
+
         } catch (error) {
             console.error(`Attempt ${attempt} failed:`, error);
-            
+
             if (attempt === maxRetries) {
                 throw new Error(`Connection failed after ${maxRetries} attempts. The server may be starting up - please wait 30 seconds and try again.`);
             }
-            
+
             // Continue to next retry
         }
     }
