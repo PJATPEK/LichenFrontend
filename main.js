@@ -6,6 +6,26 @@
 // avoids that mismatch entirely.
 const HF_SPACE_URL = "https://pjetpaaaaak-lichen-detection-api.hf.space";
 
+// Physical/physiological descriptions shown in the info panel for each
+// detected species. Keys must exactly match the "name" field returned by
+// the backend (see SPECIES_COLOR_MAP / AIR_QUALITY_MAP in utils.py).
+const SPECIES_DESCRIPTIONS = {
+    'Dirinaria picta':
+        'Dirinaria picta forms a leafy, fan-shaped patch that lies tightly against bark or rock. Its lobes radiate outward from the centre, branching repeatedly and staying narrow — usually around 1 to 1.5 mm wide — with rounded, separated tips. The upper surface has a pale, frosty grey-white colour with a smooth texture, occasionally showing a light powdery bloom near the lobe tips. Small, raised, powdery patches called soralia are scattered across the surface and release fine reproductive granules. The underside is black, and occasional black, short-stalked fruiting discs may appear, each releasing colourless, two-celled spores.',
+
+    'Pyxine cocoes':
+        'Pyxine cocoes grows as a pale greyish-green crust of narrow, radiating lobes, each under about 1 mm wide, pressed closely to bark or stone. Grainy reproductive patches called soralia break through the lobe surface in irregular shapes, releasing powdery propagules. Beneath the surface, the inner medulla layer is white. Mature specimens occasionally produce small, flat, disc-shaped fruiting bodies, 1–5 mm across, that are black with a black rim and a reddish-brown base layer. The species also contains a yellow pigment compound called lichexanthone.',
+
+    'Physcia undulata':
+        'Physcia undulata has a leaf-like, lobed thallus that spreads out in a roughly circular pattern and lies loosely on its substrate. The lobes are narrow, generally under 3 mm wide, ranging from whitish or bluish-grey to a darker grey, with little colour change when wet. The surface can look matte or slightly shiny, sometimes showing tiny pale pores under magnification, and this species is known for a consistent, fine, even powdery coating (pruina) toward the outer edges of the lobes. The underside is pale and anchored by root-like rhizines. When fruiting bodies are present, they appear as disc-shaped structures with a pale rim, producing brown, two-celled spores.',
+
+    'Nigrovothelium tropicum':
+        "Nigrovothelium tropicum grows as a crust firmly fused to its substrate, with a hardened outer layer that gives the surface a more solid, consolidated feel compared to looser crustose lichens. Its fruiting bodies are small, black, egg-shaped structures that sit fully exposed on the surface rather than embedded in a shared structure, sometimes crowding together where they grow close. Each has a tiny pore at the top through which spores are released. Inside, clear, branching threads fill the spore-bearing tissue, and the colourless spores are divided by three internal cross-walls, with a distinctive diamond-shaped pattern inside the spore wall.",
+
+    'Trypethelium eluteriae':
+        "Trypethelium eluteriae grows almost entirely inside the outer bark layer of its host tree, so it doesn't form an obvious leafy or powdery surface like most lichens. Its presence is usually only visible as small, dark fruiting bodies that push through the bark. The fungal tissue spreads through the bark in a formless mass, with its algal partner scattered loosely within rather than forming a distinct layer. This hidden growth habit gives the lichen a subtle, almost invisible appearance, often mistaken for textured bark rather than a lichen."
+};
+
 let darkModeEnabled = false;
 let currentDetections = [];
 let originalImageSrc = null;
@@ -626,6 +646,10 @@ function showDetectionPanel(detection, imgElement) {
             <div class="air-quality-bar" style="background:${detection.air_quality_color}"></div>
             <div class="info-value-large">${detection.air_quality}</div>
             <div class="info-description">${detection.air_quality_description}</div>
+        </div>
+        <div class="panel-info-section species-description-section">
+            <div class="info-label">Description</div>
+            <p class="species-description-text">${SPECIES_DESCRIPTIONS[detection.name] || 'No description available for this species yet.'}</p>
         </div>`;
 
     panel.appendChild(closeBtn);
