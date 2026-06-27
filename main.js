@@ -7,24 +7,118 @@
 const HF_SPACE_URL = "https://pjetpaaaaak-lichen-detection-api.hf.space";
 
 // Physical/physiological descriptions shown in the info panel for each
-// detected species. Keys must exactly match the "name" field returned by
-// the backend (see SPECIES_COLOR_MAP / AIR_QUALITY_MAP in utils.py).
+// detected species, in both languages. Keys must exactly match the "name"
+// field returned by the backend (see SPECIES_COLOR_MAP / AIR_QUALITY_MAP in
+// utils.py). Scientific names themselves are never translated.
 const SPECIES_DESCRIPTIONS = {
-    'Dirinaria picta':
-        'Dirinaria picta forms a leafy, fan-shaped patch that lies tightly against bark or rock. Its lobes radiate outward from the centre, branching repeatedly and staying narrow — usually around 1 to 1.5 mm wide — with rounded, separated tips. The upper surface has a pale, frosty grey-white colour with a smooth texture, occasionally showing a light powdery bloom near the lobe tips. Small, raised, powdery patches called soralia are scattered across the surface and release fine reproductive granules. The underside is black, and occasional black, short-stalked fruiting discs may appear, each releasing colourless, two-celled spores.',
-
-    'Pyxine cocoes':
-        'Pyxine cocoes grows as a pale greyish-green crust of narrow, radiating lobes, each under about 1 mm wide, pressed closely to bark or stone. Grainy reproductive patches called soralia break through the lobe surface in irregular shapes, releasing powdery propagules. Beneath the surface, the inner medulla layer is white. Mature specimens occasionally produce small, flat, disc-shaped fruiting bodies, 1–5 mm across, that are black with a black rim and a reddish-brown base layer. The species also contains a yellow pigment compound called lichexanthone.',
-
-    'Physcia undulata':
-        'Physcia undulata has a leaf-like, lobed thallus that spreads out in a roughly circular pattern and lies loosely on its substrate. The lobes are narrow, generally under 3 mm wide, ranging from whitish or bluish-grey to a darker grey, with little colour change when wet. The surface can look matte or slightly shiny, sometimes showing tiny pale pores under magnification, and this species is known for a consistent, fine, even powdery coating (pruina) toward the outer edges of the lobes. The underside is pale and anchored by root-like rhizines. When fruiting bodies are present, they appear as disc-shaped structures with a pale rim, producing brown, two-celled spores.',
-
-    'Nigrovothelium tropicum':
-        "Nigrovothelium tropicum grows as a crust firmly fused to its substrate, with a hardened outer layer that gives the surface a more solid, consolidated feel compared to looser crustose lichens. Its fruiting bodies are small, black, egg-shaped structures that sit fully exposed on the surface rather than embedded in a shared structure, sometimes crowding together where they grow close. Each has a tiny pore at the top through which spores are released. Inside, clear, branching threads fill the spore-bearing tissue, and the colourless spores are divided by three internal cross-walls, with a distinctive diamond-shaped pattern inside the spore wall.",
-
-    'Trypethelium eluteriae':
-        "Trypethelium eluteriae grows almost entirely inside the outer bark layer of its host tree, so it doesn't form an obvious leafy or powdery surface like most lichens. Its presence is usually only visible as small, dark fruiting bodies that push through the bark. The fungal tissue spreads through the bark in a formless mass, with its algal partner scattered loosely within rather than forming a distinct layer. This hidden growth habit gives the lichen a subtle, almost invisible appearance, often mistaken for textured bark rather than a lichen."
+    'Dirinaria picta': {
+        en: 'Dirinaria picta forms a leafy, fan-shaped patch that lies tightly against bark or rock. Its lobes radiate outward from the centre, branching repeatedly and staying narrow — usually around 1 to 1.5 mm wide — with rounded, separated tips. The upper surface has a pale, frosty grey-white colour with a smooth texture, occasionally showing a light powdery bloom near the lobe tips. Small, raised, powdery patches called soralia are scattered across the surface and release fine reproductive granules. The underside is black, and occasional black, short-stalked fruiting discs may appear, each releasing colourless, two-celled spores.',
+        th: 'ไดรินาเรีย พิคตา (Dirinaria picta) มีรูปร่างเป็นแผ่นใบบางคล้ายพัด เกาะแน่นกับเปลือกไม้หรือหิน กลีบแผ่ขยายออกจากศูนย์กลาง แตกแขนงซ้ำ ๆ และมีความกว้างแคบ ประมาณ 1 ถึง 1.5 มิลลิเมตร ปลายกลีบมนและแยกออกจากกัน พื้นผิวด้านบนมีสีเทาขาวอมหมอกอ่อน เรียบ และบางครั้งอาจมีฝุ่นขาวบาง ๆ ปกคลุมบริเวณปลายกลีบ มีจุดนูนเล็ก ๆ คล้ายฝุ่นเรียกว่าโซราเลีย กระจายอยู่บนพื้นผิว ปลดปล่อยเม็ดสืบพันธุ์ละเอียด ด้านล่างของแผ่นมีสีดำ และบางครั้งอาจพบโครงสร้างสร้างสปอร์สีดำที่มีก้านสั้น ปล่อยสปอร์ไม่มีสีแบบสองเซลล์'
+    },
+    'Pyxine cocoes': {
+        en: 'Pyxine cocoes grows as a pale greyish-green crust of narrow, radiating lobes, each under about 1 mm wide, pressed closely to bark or stone. Grainy reproductive patches called soralia break through the lobe surface in irregular shapes, releasing powdery propagules. Beneath the surface, the inner medulla layer is white. Mature specimens occasionally produce small, flat, disc-shaped fruiting bodies, 1–5 mm across, that are black with a black rim and a reddish-brown base layer. The species also contains a yellow pigment compound called lichexanthone.',
+        th: 'ไพซีน โคโคอีส (Pyxine cocoes) เติบโตเป็นแผ่นคล้ายเปลือกสีเทาอมเขียวอ่อน มีกลีบแคบแผ่ออกจากศูนย์กลาง กว้างไม่ถึง 1 มิลลิเมตร เกาะแน่นกับเปลือกไม้หรือหิน มีจุดสร้างสปอร์ผิวขรุขระ (โซราเลีย) แตกออกตามพื้นผิวกลีบเป็นรูปทรงไม่แน่นอน ปลดปล่อยเม็ดสืบพันธุ์เป็นฝุ่น ใต้พื้นผิวมีเนื้อชั้นในสีขาว ตัวอย่างที่โตเต็มที่อาจพบโครงสร้างสร้างสปอร์รูปจานแบนขนาดเล็ก กว้าง 1–5 มิลลิเมตร มีสีดำพร้อมขอบสีดำและฐานสีน้ำตาลแดง สายพันธุ์นี้ยังมีสารสีเหลืองที่เรียกว่าไลเคซานโทน'
+    },
+    'Physcia undulata': {
+        en: 'Physcia undulata has a leaf-like, lobed thallus that spreads out in a roughly circular pattern and lies loosely on its substrate. The lobes are narrow, generally under 3 mm wide, ranging from whitish or bluish-grey to a darker grey, with little colour change when wet. The surface can look matte or slightly shiny, sometimes showing tiny pale pores under magnification, and this species is known for a consistent, fine, even powdery coating (pruina) toward the outer edges of the lobes. The underside is pale and anchored by root-like rhizines. When fruiting bodies are present, they appear as disc-shaped structures with a pale rim, producing brown, two-celled spores.',
+        th: 'ฟิสเซีย อันดูลาตา (Physcia undulata) มีแผ่นทาลลัสคล้ายใบที่แยกเป็นกลีบ แผ่ขยายเป็นวงคล้ายวงกลม เกาะกับพื้นผิวอย่างหลวม ๆ กลีบมีความแคบ โดยทั่วไปกว้างไม่ถึง 3 มิลลิเมตร มีสีตั้งแต่ขาวอมฟ้าจนถึงเทาเข้ม และมีการเปลี่ยนสีเพียงเล็กน้อยเมื่อเปียก พื้นผิวอาจดูด้านหรือมันเล็กน้อย และเป็นหนึ่งในสายพันธุ์ของสกุลนี้ที่มีฝุ่นขาวละเอียดสม่ำเสมอ (พรูอินา) ปกคลุมบริเวณขอบกลีบด้านนอก ด้านใต้มีสีอ่อนและยึดด้วยเส้นใยคล้ายราก เมื่อมีโครงสร้างสร้างสปอร์ จะมีลักษณะเป็นจานมีขอบสีอ่อน ปล่อยสปอร์สีน้ำตาลแบบสองเซลล์'
+    },
+    'Nigrovothelium tropicum': {
+        en: "Nigrovothelium tropicum grows as a crust firmly fused to its substrate, with a hardened outer layer that gives the surface a more solid, consolidated feel compared to looser crustose lichens. Its fruiting bodies are small, black, egg-shaped structures that sit fully exposed on the surface rather than embedded in a shared structure, sometimes crowding together where they grow close. Each has a tiny pore at the top through which spores are released. Inside, clear, branching threads fill the spore-bearing tissue, and the colourless spores are divided by three internal cross-walls, with a distinctive diamond-shaped pattern inside the spore wall.",
+        th: 'ไนโกรโวธีเลียม ทรอปิคุม (Nigrovothelium tropicum) เติบโตเป็นแผ่นคล้ายคราบเกาะแน่นกับพื้นผิว มีเปลือกชั้นนอกที่แข็งทำให้พื้นผิวดูแน่นและรวมตัวกันมากกว่าไลเคนชนิดคราบทั่วไป โครงสร้างสร้างสปอร์มีขนาดเล็ก สีดำ รูปไข่ และอยู่บนพื้นผิวแบบเปิดเผยโดยไม่มีก้าน บางครั้งอาจเกาะกันแน่นจนติดกัน แต่ละโครงสร้างมีรูเล็ก ๆ ด้านบนสำหรับปลดปล่อยสปอร์ ภายในมีเส้นใยโปร่งแสงแตกแขนงเต็มเนื้อเยื่อสร้างสปอร์ และสปอร์ไม่มีสีถูกแบ่งด้วยผนังกั้นภายในสามชั้น พร้อมลักษณะเฉพาะคล้ายเพชรภายในผนังสปอร์'
+    },
+    'Trypethelium eluteriae': {
+        en: "Trypethelium eluteriae grows almost entirely inside the outer bark layer of its host tree, so it doesn't form an obvious leafy or powdery surface like most lichens. Its presence is usually only visible as small, dark fruiting bodies that push through the bark. The fungal tissue spreads through the bark in a formless mass, with its algal partner scattered loosely within rather than forming a distinct layer. This hidden growth habit gives the lichen a subtle, almost invisible appearance, often mistaken for textured bark rather than a lichen.",
+        th: 'ทริปเพเทเลียม เอลูเทอริเอ (Trypethelium eluteriae) เติบโตอยู่ภายในเปลือกไม้ของต้นไม้เจ้าบ้านเกือบทั้งหมด จึงไม่ปรากฏเป็นแผ่นใบหรือฝุ่นแบบไลเคนทั่วไป การมีอยู่ของมันมักสังเกตได้จากโครงสร้างสร้างสปอร์สีเข้มขนาดเล็กที่แทงทะลุผ่านเปลือกไม้ เนื้อเยื่อของเชื้อราแผ่กระจายอยู่ในเปลือกไม้แบบไม่มีรูปทรงแน่นอน โดยมีสาหร่ายคู่ชีวิตกระจายอยู่อย่างหลวม ๆ ภายในมากกว่าจะรวมเป็นชั้นเดียว ลักษณะการเติบโตที่ซ่อนตัวนี้ทำให้ไลเคนชนิดนี้ดูจางและแทบไม่เห็น มักถูกเข้าใจผิดว่าเป็นเพียงเปลือกไม้ที่มีลวดลายมากกว่าจะเป็นไลเคน'
+    }
 };
+
+// The backend (utils.py) always returns air_quality / air_quality_description
+// strings in Thai. These maps translate the known Thai phrases to English for
+// display when the app language is set to English. Thai display is just the
+// original backend string, unchanged.
+const AIR_QUALITY_LEVEL_EN = {
+    'มลพิษต่ำ': 'Low Pollution',
+    'มลพิษปานกลาง': 'Moderate Pollution',
+    'มลพิษสูง': 'High Pollution',
+    'มลพิษต่ำ ถึง มลพิษปานกลาง': 'Low to Moderate Pollution',
+    'มลพิษต่ำ ถึง มลพิษสูง': 'Low to High Pollution',
+    'ไม่ทราบ': 'Unknown'
+};
+
+const AIR_QUALITY_DESC_EN = {
+    'คุณภาพอากาศดีมาก': 'Air quality is very good',
+    'คุณภาพอากาศปานกลาง': 'Air quality is moderate',
+    'คุณภาพอากาศแย่': 'Air quality is poor',
+    'คุณภาพอากาศดีถึงปานกลาง': 'Air quality is good to moderate',
+    'คุณภาพอากาศแปรผัน (ต่ำถึงสูง)': 'Air quality varies (low to high)',
+    'ไม่สามารถประเมินได้': 'Unable to assess'
+};
+
+// All other translatable UI strings. The page title ("Lichen Detection
+// (Model z1)") and lichen scientific names are intentionally excluded —
+// they never change with this toggle.
+const TRANSLATIONS = {
+    en: {
+        sidebarMenu: 'Menu',
+        navHome: 'Home',
+        navHelp: 'How to Use',
+        navSettings: 'Settings',
+        predictBtn: 'Predict',
+        processing: 'Processing...',
+        uploadingImage: 'Uploading image...',
+        processingImage: 'Processing image...',
+        wakingServer: (a, m) => `Waking up server... (Attempt ${a}/${m})`,
+        reconnecting: (a, m) => `Reconnecting (${a}/${m})...`,
+        connectionFailed: (m) => `Connection failed after ${m} attempts. The server may be starting up - please wait 30 seconds and try again.`,
+        pleaseSelectImage: 'Please select an image file',
+        errorPrefix: 'An error occurred: ',
+        errorSuffix: '\n\nPlease try again.',
+        confidence: 'Confidence',
+        airQualityLevel: 'Air Quality Level',
+        description: 'Description',
+        noDescription: 'No description available for this species yet.',
+        settingsTitle: 'Settings',
+        themeTitle: 'Theme',
+        themeDesc: 'Switch between light and dark mode',
+        lightMode: 'Light Mode',
+        darkMode: 'Dark Mode',
+        languageTitle: 'Language',
+        languageDesc: 'Switch the app language between English and Thai',
+        helpTitle: 'How to Use'
+    },
+    th: {
+        sidebarMenu: 'เมนู',
+        navHome: 'หน้าหลัก',
+        navHelp: 'วิธีใช้งาน',
+        navSettings: 'การตั้งค่า',
+        predictBtn: 'ทำนาย',
+        processing: 'กำลังประมวลผล...',
+        uploadingImage: 'กำลังอัปโหลดรูปภาพ...',
+        processingImage: 'กำลังประมวลผลภาพ...',
+        wakingServer: (a, m) => `กำลังปลุกเซิร์ฟเวอร์... (ครั้งที่ ${a}/${m})`,
+        reconnecting: (a, m) => `กำลังเชื่อมต่อใหม่ (${a}/${m})...`,
+        connectionFailed: (m) => `การเชื่อมต่อล้มเหลวหลังจากลอง ${m} ครั้ง เซิร์ฟเวอร์อาจกำลังเริ่มทำงาน กรุณารอ 30 วินาทีแล้วลองใหม่`,
+        pleaseSelectImage: 'กรุณาเลือกไฟล์รูปภาพ',
+        errorPrefix: 'เกิดข้อผิดพลาด: ',
+        errorSuffix: '\n\nกรุณาลองอีกครั้ง',
+        confidence: 'ความมั่นใจ',
+        airQualityLevel: 'ระดับมลพิษทางอากาศ',
+        description: 'คำอธิบาย',
+        noDescription: 'ยังไม่มีคำอธิบายสำหรับสายพันธุ์นี้',
+        settingsTitle: 'การตั้งค่า',
+        themeTitle: 'ธีม',
+        themeDesc: 'สลับระหว่างโหมดสว่างและโหมดมืด',
+        lightMode: 'โหมดสว่าง',
+        darkMode: 'โหมดมืด',
+        languageTitle: 'ภาษา',
+        languageDesc: 'สลับภาษาของแอประหว่างอังกฤษและไทย',
+        helpTitle: 'วิธีการใช้งาน'
+    }
+};
+
+let currentLanguage = 'en';
+let currentPanelDetection = null; // the detection currently shown in the info panel, if any
 
 let darkModeEnabled = false;
 let currentDetections = [];
@@ -36,6 +130,71 @@ let zoomLevel = 1;
 let panX = 0, panY = 0;
 let isDragging = false;
 let lastMouseX = 0, lastMouseY = 0;
+
+// ============================================
+// GLOBAL LANGUAGE SWITCHING
+// ============================================
+// Updates every translatable piece of UI text on the page. The page title
+// ("Lichen Detection (Model z1)") and lichen scientific names are never
+// touched by this function — they stay the same in both languages.
+function applyLanguage(lang) {
+    currentLanguage = lang;
+    const t = TRANSLATIONS[lang];
+
+    document.documentElement.lang = lang;
+
+    // Sidebar (desktop)
+    const sidebarMenuTitle = document.getElementById('sidebar-menu-title');
+    if (sidebarMenuTitle) sidebarMenuTitle.textContent = t.sidebarMenu;
+    const sidebarLabelHome = document.getElementById('sidebar-label-home');
+    if (sidebarLabelHome) sidebarLabelHome.textContent = t.navHome;
+    const sidebarLabelHelp = document.getElementById('sidebar-label-help');
+    if (sidebarLabelHelp) sidebarLabelHelp.textContent = t.navHelp;
+    const sidebarLabelSettings = document.getElementById('sidebar-label-settings');
+    if (sidebarLabelSettings) sidebarLabelSettings.textContent = t.navSettings;
+
+    // Bottom nav (mobile)
+    const navTabLabelHome = document.getElementById('navtab-label-home');
+    if (navTabLabelHome) navTabLabelHome.textContent = t.navHome;
+    const navTabLabelHelp = document.getElementById('navtab-label-help');
+    if (navTabLabelHelp) navTabLabelHelp.textContent = t.navHelp;
+    const navTabLabelSettings = document.getElementById('navtab-label-settings');
+    if (navTabLabelSettings) navTabLabelSettings.textContent = t.navSettings;
+
+    // Predict button (only when not mid-upload, so we don't clobber progress text)
+    const predictBtn = document.getElementById('predict-btn');
+    if (predictBtn && !predictBtn.disabled) predictBtn.textContent = t.predictBtn;
+
+    // Help modal title + which instruction block is visible
+    const helpTitleEl = document.getElementById('help-title');
+    if (helpTitleEl) helpTitleEl.textContent = t.helpTitle;
+    const helpEn = document.getElementById('help-en');
+    const helpTh = document.getElementById('help-th');
+    if (helpEn) helpEn.style.display = lang === 'en' ? 'block' : 'none';
+    if (helpTh) helpTh.style.display = lang === 'th' ? 'block' : 'none';
+
+    // Settings modal
+    const settingsModalTitle = document.getElementById('settings-modal-title');
+    if (settingsModalTitle) settingsModalTitle.textContent = t.settingsTitle;
+    const settingsThemeTitle = document.getElementById('settings-theme-title');
+    if (settingsThemeTitle) settingsThemeTitle.textContent = t.themeTitle;
+    const settingsThemeDesc = document.getElementById('settings-theme-desc');
+    if (settingsThemeDesc) settingsThemeDesc.textContent = t.themeDesc;
+    const themeLabelLight = document.getElementById('theme-label-light');
+    if (themeLabelLight) themeLabelLight.textContent = t.lightMode;
+    const themeLabelDark = document.getElementById('theme-label-dark');
+    if (themeLabelDark) themeLabelDark.textContent = t.darkMode;
+    const settingsLangTitle = document.getElementById('settings-lang-title');
+    if (settingsLangTitle) settingsLangTitle.textContent = t.languageTitle;
+    const settingsLangDesc = document.getElementById('settings-lang-desc');
+    if (settingsLangDesc) settingsLangDesc.textContent = t.languageDesc;
+
+    // If a detection info panel is currently open, refresh its translatable text
+    if (currentPanelDetection) {
+        const infoContainer = document.getElementById('panel-translatable-info');
+        if (infoContainer) infoContainer.innerHTML = buildPanelInfoHTML(currentPanelDetection);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     
@@ -232,36 +391,48 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // ============================================
-    // HELP MODAL LANGUAGE TOGGLE
+    // GLOBAL LANGUAGE TOGGLE IN SETTINGS
     // ============================================
-    
-    const langToggle = document.getElementById('lang-toggle');
-    const helpTitle = document.getElementById('help-title');
-    const helpEn = document.getElementById('help-en');
-    const helpTh = document.getElementById('help-th');
-    const langLabelEn = document.getElementById('lang-label-en');
-    const langLabelTh = document.getElementById('lang-label-th');
-    
-    if (langToggle) {
-        // Set initial state
-        if (langLabelEn) langLabelEn.classList.add('active');
-        
-        langToggle.addEventListener('change', function() {
-            if (this.checked) {
-                // Switch to Thai
-                if (helpTitle) helpTitle.textContent = 'วิธีการใช้งาน';
-                if (helpEn) helpEn.style.display = 'none';
-                if (helpTh) helpTh.style.display = 'block';
-                if (langLabelEn) langLabelEn.classList.remove('active');
-                if (langLabelTh) langLabelTh.classList.add('active');
-            } else {
-                // Switch to English
-                if (helpTitle) helpTitle.textContent = 'How to Use';
-                if (helpEn) helpEn.style.display = 'block';
-                if (helpTh) helpTh.style.display = 'none';
-                if (langLabelEn) langLabelEn.classList.add('active');
-                if (langLabelTh) langLabelTh.classList.remove('active');
-            }
+
+    const globalLangToggle = document.getElementById('global-lang-toggle');
+    const langOptionEn = document.getElementById('lang-option-en');
+    const langOptionTh = document.getElementById('lang-option-th');
+
+    function updateLanguageUI() {
+        if (currentLanguage === 'th') {
+            if (globalLangToggle) globalLangToggle.checked = true;
+            if (langOptionEn) langOptionEn.classList.remove('active');
+            if (langOptionTh) langOptionTh.classList.add('active');
+        } else {
+            if (globalLangToggle) globalLangToggle.checked = false;
+            if (langOptionEn) langOptionEn.classList.add('active');
+            if (langOptionTh) langOptionTh.classList.remove('active');
+        }
+    }
+
+    function switchLanguage(lang) {
+        applyLanguage(lang);
+        updateLanguageUI();
+    }
+
+    // Initialize language UI + apply default language text everywhere
+    switchLanguage(currentLanguage);
+
+    if (globalLangToggle) {
+        globalLangToggle.addEventListener('change', function() {
+            switchLanguage(this.checked ? 'th' : 'en');
+        });
+    }
+
+    if (langOptionEn) {
+        langOptionEn.addEventListener('click', function() {
+            if (currentLanguage !== 'en') switchLanguage('en');
+        });
+    }
+
+    if (langOptionTh) {
+        langOptionTh.addEventListener('click', function() {
+            if (currentLanguage !== 'th') switchLanguage('th');
         });
     }
     
@@ -284,7 +455,7 @@ async function handleImageUpload(e) {
 
     const fileInput = document.getElementById('image-input');
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-        alert('Please select an image file');
+        alert(TRANSLATIONS[currentLanguage].pleaseSelectImage);
         return;
     }
 
@@ -292,7 +463,7 @@ async function handleImageUpload(e) {
 
     const submitButton = document.querySelector('#upload-form button[type="submit"]');
     const originalButtonText = submitButton.textContent;
-    submitButton.textContent = 'Processing...';
+    submitButton.textContent = TRANSLATIONS[currentLanguage].processing;
     submitButton.disabled = true;
 
     const file = fileInput.files[0];
@@ -332,7 +503,8 @@ async function handleImageUpload(e) {
 
     } catch (error) {
         console.error('Error:', error);
-        alert('เกิดข้อผิดพลาด: ' + error.message + '\n\nPlease try again.');
+        const t = TRANSLATIONS[currentLanguage];
+        alert(t.errorPrefix + error.message + t.errorSuffix);
     } finally {
         submitButton.textContent = originalButtonText;
         submitButton.disabled    = false;
@@ -426,17 +598,18 @@ function streamPredictionResult(eventId) {
 // to ride out a Space cold start.
 async function connectAndPredictWithRetry(file, submitButton, maxRetries = 3, retryDelay = 5000) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const t = TRANSLATIONS[currentLanguage];
         try {
             if (attempt > 1) {
-                submitButton.textContent = `Waking up server... (Attempt ${attempt}/${maxRetries})`;
+                submitButton.textContent = t.wakingServer(attempt, maxRetries);
                 console.log(`Retry attempt ${attempt}/${maxRetries} after ${retryDelay}ms delay`);
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
 
-            submitButton.textContent = attempt === 1 ? 'Uploading image...' : `Reconnecting (${attempt}/${maxRetries})...`;
+            submitButton.textContent = attempt === 1 ? t.uploadingImage : t.reconnecting(attempt, maxRetries);
             const uploadedPath = await uploadFileToSpace(file);
 
-            submitButton.textContent = 'Processing image...';
+            submitButton.textContent = t.processingImage;
             const eventId = await startPrediction(uploadedPath);
             const payload = await streamPredictionResult(eventId);
 
@@ -446,7 +619,7 @@ async function connectAndPredictWithRetry(file, submitButton, maxRetries = 3, re
             console.error(`Attempt ${attempt} failed:`, error);
 
             if (attempt === maxRetries) {
-                throw new Error(`Connection failed after ${maxRetries} attempts. The server may be starting up - please wait 30 seconds and try again.`);
+                throw new Error(t.connectionFailed(maxRetries));
             }
 
             // Continue to next retry
@@ -575,9 +748,48 @@ function applySelectiveBlur(imgElement, bbox) {
 // DETECTION PANEL
 // ============================================
 
+// Builds the translatable inner content of the info panel (confidence,
+// air quality, and species description) for the currently selected language.
+// Re-run whenever the panel opens AND whenever the language is switched
+// while a panel is already open (see applyLanguage()).
+function buildPanelInfoHTML(detection) {
+    const t = TRANSLATIONS[currentLanguage];
+
+    const airQualityLevelText = currentLanguage === 'en'
+        ? (AIR_QUALITY_LEVEL_EN[detection.air_quality] || detection.air_quality)
+        : detection.air_quality;
+
+    const airQualityDescText = currentLanguage === 'en'
+        ? (AIR_QUALITY_DESC_EN[detection.air_quality_description] || detection.air_quality_description)
+        : detection.air_quality_description;
+
+    const speciesEntry = SPECIES_DESCRIPTIONS[detection.name];
+    const speciesDescText = speciesEntry ? speciesEntry[currentLanguage] : null;
+
+    return `
+        <div class="panel-info-section">
+            <div class="info-label">${t.confidence}</div>
+            <div class="info-value">${(detection.confidence * 100).toFixed(0)}%</div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" style="width:${(detection.confidence * 100).toFixed(0)}%"></div>
+            </div>
+        </div>
+        <div class="panel-info-section">
+            <div class="info-label">${t.airQualityLevel}</div>
+            <div class="air-quality-bar" style="background:${detection.air_quality_color}"></div>
+            <div class="info-value-large">${airQualityLevelText}</div>
+            <div class="info-description">${airQualityDescText}</div>
+        </div>
+        <div class="panel-info-section species-description-section">
+            <div class="info-label">${t.description}</div>
+            <p class="species-description-text">${speciesDescText || t.noDescription}</p>
+        </div>`;
+}
+
 function showDetectionPanel(detection, imgElement) {
     activeDetectionId = detection.id;
     activeBbox        = detection.bbox;
+    currentPanelDetection = detection;
 
     const isMobile = window.innerWidth <= 768;
 
@@ -634,23 +846,7 @@ function showDetectionPanel(detection, imgElement) {
             <button class="zoom-btn" id="zoom-reset">↺</button>
             <span class="zoom-level-text">${Math.round(zoomLevel * 100)}%</span>
         </div>
-        <div class="panel-info-section">
-            <div class="info-label">ความมั่นใจ</div>
-            <div class="info-value">${(detection.confidence * 100).toFixed(0)}%</div>
-            <div class="confidence-bar">
-                <div class="confidence-fill" style="width:${(detection.confidence * 100).toFixed(0)}%"></div>
-            </div>
-        </div>
-        <div class="panel-info-section">
-            <div class="info-label">ระดับมลพิษทางอากาศ</div>
-            <div class="air-quality-bar" style="background:${detection.air_quality_color}"></div>
-            <div class="info-value-large">${detection.air_quality}</div>
-            <div class="info-description">${detection.air_quality_description}</div>
-        </div>
-        <div class="panel-info-section species-description-section">
-            <div class="info-label">Description</div>
-            <p class="species-description-text">${SPECIES_DESCRIPTIONS[detection.name] || 'No description available for this species yet.'}</p>
-        </div>`;
+        <div id="panel-translatable-info">${buildPanelInfoHTML(detection)}</div>`;
 
     panel.appendChild(closeBtn);
     panel.appendChild(panelContent);
