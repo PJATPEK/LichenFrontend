@@ -13,20 +13,20 @@
     <!-- Desktop Left Sidebar -->
     <aside class="desktop-sidebar">
         <div class="sidebar-header">
-            <h3>Menu</h3>
+            <h3 id="sidebar-menu-title">Menu</h3>
         </div>
         <nav class="sidebar-nav">
             <button class="sidebar-btn active" data-page="home">
                 <span class="sidebar-icon">🏠</span>
-                <span class="sidebar-label">Home</span>
+                <span class="sidebar-label" id="sidebar-label-home">Home</span>
             </button>
             <button class="sidebar-btn" data-page="help">
                 <span class="sidebar-icon">❓</span>
-                <span class="sidebar-label">How to Use</span>
+                <span class="sidebar-label" id="sidebar-label-help">How to Use</span>
             </button>
             <button class="sidebar-btn" data-page="settings">
                 <span class="sidebar-icon">⚙️</span>
-                <span class="sidebar-label">Settings</span>
+                <span class="sidebar-label" id="sidebar-label-settings">Settings</span>
             </button>
         </nav>
     </aside>
@@ -35,15 +35,15 @@
     <nav class="mobile-bottom-nav">
         <button class="nav-tab" data-tab="help" style="flex: 4;">
             <span class="nav-icon">❓</span>
-            <span class="nav-label">How to Use</span>
+            <span class="nav-label" id="navtab-label-help">How to Use</span>
         </button>
         <button class="nav-tab active" data-tab="home" style="flex: 7;">
             <span class="nav-icon">🏠</span>
-            <span class="nav-label">Home</span>
+            <span class="nav-label" id="navtab-label-home">Home</span>
         </button>
         <button class="nav-tab" data-tab="settings" style="flex: 4;">
             <span class="nav-icon">⚙️</span>
-            <span class="nav-label">Settings</span>
+            <span class="nav-label" id="navtab-label-settings">Settings</span>
         </button>
     </nav>
     
@@ -58,7 +58,7 @@
 
         <form id="upload-form" enctype="multipart/form-data">
             <input type="file" id="image-input" accept="image/*" required>
-            <button type="submit">Predict</button>
+            <button type="submit" id="predict-btn">Predict</button>
         </form>
 
     <div id="result-container" style="display: none">
@@ -78,16 +78,6 @@
         <div class="help-modal-content">
             <button class="help-close" aria-label="Close help">&times;</button>
             <h2 id="help-title">How to Use</h2>
-            
-            <!-- Language Toggle -->
-            <div class="language-toggle">
-                <span class="lang-label" id="lang-label-en">English</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="lang-toggle">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="lang-label" id="lang-label-th">ไทย</span>
-            </div>
             
             <!-- ========================================== -->
             <!-- ENGLISH INSTRUCTIONS -->
@@ -178,16 +168,16 @@
     <div id="settings-modal" class="help-modal">
         <div class="help-modal-content settings-modal-content">
             <button class="help-close" aria-label="Close settings">&times;</button>
-            <h2>Settings</h2>
+            <h2 id="settings-modal-title">Settings</h2>
             
             <div class="settings-section">
-                <h3>Theme</h3>
-                <p class="settings-description">Switch between light and dark mode</p>
+                <h3 id="settings-theme-title">Theme</h3>
+                <p class="settings-description" id="settings-theme-desc">Switch between light and dark mode</p>
                 
                 <div class="theme-switcher">
                     <div class="theme-option" id="theme-light">
                         <span class="theme-icon">☀️</span>
-                        <span class="theme-label">Light Mode</span>
+                        <span class="theme-label" id="theme-label-light">Light Mode</span>
                     </div>
                     
                     <label class="theme-toggle-switch">
@@ -197,7 +187,29 @@
                     
                     <div class="theme-option" id="theme-dark">
                         <span class="theme-icon">🌙</span>
-                        <span class="theme-label">Dark Mode</span>
+                        <span class="theme-label" id="theme-label-dark">Dark Mode</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 id="settings-lang-title">Language</h3>
+                <p class="settings-description" id="settings-lang-desc">Switch the app language between English and Thai</p>
+
+                <div class="theme-switcher">
+                    <div class="theme-option" id="lang-option-en">
+                        <span class="theme-icon">🇬🇧</span>
+                        <span class="theme-label">English</span>
+                    </div>
+
+                    <label class="theme-toggle-switch">
+                        <input type="checkbox" id="global-lang-toggle">
+                        <span class="theme-toggle-slider"></span>
+                    </label>
+
+                    <div class="theme-option" id="lang-option-th">
+                        <span class="theme-icon">🇹🇭</span>
+                        <span class="theme-label">ไทย</span>
                     </div>
                 </div>
             </div>
